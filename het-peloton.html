@@ -32,6 +32,7 @@ a{color:inherit;text-decoration:none}
 .b i:before{content:"";position:absolute;left:0;top:-3px;width:7px;height:4px;background:inherit;border-radius:2px 2px 0 0}
 .b.pel{color:var(--paper);font-weight:700;margin-top:4px}
 .b.pel i{background:var(--red)}
+.b em{font-style:normal;color:var(--dim);margin-left:auto}
 .b.pel em{font-style:normal;color:var(--stone);font-weight:400;margin-left:auto}
 .site{margin-top:auto;border-top:1px solid var(--line);padding-top:10px;color:var(--stone);font-size:12px}
 .site b{display:block;color:var(--paper);font-weight:600;font-size:13px}
@@ -155,15 +156,13 @@ canvas.wv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
   </div>
 
   <div class="panel tlp">
-    <div class="tab"><b>Ilger_x_HetPeloton_v27</b><span class="hint">scroll of sleep om door de tijdlijn te gaan</span></div>
+    <div class="tab"><b>Ilger_x_HetPeloton_v27</b><span class="hint">scroll of sleep door de tijdlijn, spatie speelt af met geluid</span></div>
     <div class="tl" id="tl">
-      <div class="heads"><div></div><div>V2</div><div>V1</div><div>A1</div><div>A2</div></div>
+      <div class="heads"><div></div><div>V1</div><div>A1</div></div>
       <div class="lanes" id="lanes">
         <div class="ruler" id="ruler"></div>
-        <div class="lane v2" id="V2"></div>
         <div class="lane v1" id="V1"></div>
         <div class="lane" id="A1"><canvas class="wv" id="wa1"></canvas></div>
-        <div class="lane" id="A2"><canvas class="wv" id="wa2"></canvas></div>
         <div class="ylines" id="ylines"></div>
         <div class="ph" id="ph"></div>
       </div>
@@ -181,39 +180,28 @@ canvas.wv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 (() => {
 const FPS = 25;
 const V1 = [
-  ['2024','splintertime','Splintertime.mp4',105],
-  ['2025','documentaire','Documentaire.mp4',180],
-  ['2025','bnix-aftermovie','BNIX_30jaar_aftermovie.mp4',129],
-  ['2025','bnix-testimonials','BNIX_30jaar_testimonials.mp4',179],
-  ['2025','heylen-gsj','Heylen_x_GSJ.mp4',33],
-  ['2025','bumaco','Bumaco_Boutique.mp4',60],
-  ['2025','reportage','Kotbelasting.mp4',185],
-  ['2026','ostend-aftermovie','OstendBeach_aftermovie.mp4',125],
-  ['2026','tnc','TNC.mp4',83],
-  ['2026','exr','EXR_commercial.mp4',57],
-  ['2026','cdrc-1','SimonHaex_x_CDRC.mp4',60],
-  ['2026','diepgang','Diepgang.mp4',55],
-  ['2026','bambata','Bambata.mp4',75],
-  ['2026','spec-ferrari','Spec_Ferrari.mp4',30]
+  ['Race Service','tutto-teaser','Tuttobene_teaser.mp4',23.66],
+  ['Race Service','tutto-opening','Tuttobene_opening.mp4',25.05],
+  ['Race Service','tutto-dayrecap','Tuttobene_dayrecap.mp4',25.58],
+  ['FD Productions','tml-cocacola','TML_CocaCola_HomeParty.mp4',29.96],
+  ['FD Productions','tml-absolut','TML_Absolut.mp4',35],
+  ['FD Productions','tml-united','TML_Absolut_UnitedWeDance.mp4',22.76],
+  ['FD Productions','tml-lidl','TML_Lidl_BakeryRave.mp4',15.8],
+  ['FD Productions','tml-loop','TML_Loop_Winter.mp4',17.4],
+  ['Arteveldehogeschool','spec-ferrari','Spec_Ferrari.mp4',30.04]
 ];
-const REELS = [['tutto-dayrecap','Tuttobene_dayrecap.mp4',25],['tutto-opening','Tuttobene_opening.mp4',25],['tml-cocacola','TML_CocaCola.mp4',30],['tml-absolut','TML_Absolut.mp4',35],['tml-lidl','TML_Lidl.mp4',16],['tml-loop','TML_Loop.mp4',17],['bks-pommelien','BKS_Pommelien.mp4',37],['obf-joris','OBF_JorisVoorn.mp4',20]];
-const RGAPS = [4,22,3,3,3,26,30];
-const GAP = 210;
-
-let t = 0; const years = {}; const v1 = [];
-for (const [y,slug,name,d] of V1) { if (!(y in years)) years[y] = t; v1.push({s:t,d,slug,name}); t += d; }
-const END = t; years['2027'] = END;
-const TOTAL = END + GAP + 40;
-const v2 = []; t = years['2026'] + 8;
-REELS.forEach(([slug,name,d],i) => { v2.push({s:t,d,slug,name}); t += d + (RGAPS[i] || 0); });
-const at = (slug, l) => l.find(c => c.slug === slug).s;
+const GAP = 60;
+let t = 0; const v1 = [];
+for (const [bin,slug,name,d] of V1) { v1.push({s:t,d,slug,name,bin}); t += d; }
+const END = t;
+const years = {'2026':0,'2027':END};
+const TOTAL = END + GAP + 8;
+const v2 = [];
+const at = slug => v1.find(c => c.slug === slug).s;
 const MARKERS = [
-  [at('bnix-aftermovie',v1),'bnix 30 jaar. aftermovie en testimonials'],
-  [at('reportage',v1)-20,'eigen zaak, ilger albert. sinds 18.08.2025'],
-  [at('tutto-dayrecap',v2),'tuttobene. 20+ shooters, gemonteerd op locatie'],
-  [at('tml-cocacola',v2),'tomorrowland voor fd. 5 merken, geen tijd'],
-  [at('exr',v1),'exr commercial, samen met florian'],
-  [at('spec-ferrari',v1),'spec ferrari. cinemalenzen, als een echte set'],
+  [at('tutto-teaser'),'tuttobene voor race service. 20+ shooters, gemonteerd op locatie'],
+  [at('tml-cocacola'),'tomorrowland voor fd productions. 5 merken, geen tijd'],
+  [at('spec-ferrari'),'spec ferrari. eerste commercial, cinemalenzen'],
   [END,'het peloton']
 ];
 
@@ -224,8 +212,8 @@ const $ = id => document.getElementById(id);
 const IMG = 'assets/img/', VID = 'assets/video/';
 
 // bins
-const bins = ['FD Productions','Race Service','Best Kept Secret','Ostend Beach','BNIX','Heylen Vastgoed','GSJ Advocaten','Bumaco Boutique','Arteveldehogeschool'];
-$('bins').innerHTML = bins.map(b => `<div class="b"><i></i>${b}</div>`).join('') +
+const counts = {}; v1.forEach(c => counts[c.bin] = (counts[c.bin]||0) + 1);
+$('bins').innerHTML = Object.entries(counts).map(([b,n]) => `<div class="b"><i></i>${b}<em>${n} item${n>1?'s':''}</em></div>`).join('') +
   `<div class="b pel"><i></i>Het Peloton<em>0 items</em></div>` +
   `<a class="site" href="index.html"><b>ilgerrr.github.io</b>alle footage, volledige credits</a>`;
 
@@ -236,10 +224,10 @@ $('dur').textContent = tc(END + GAP);
 
 // ruler
 const ruler = $('ruler'); let rh = '';
-for (let s = 0; s <= TOTAL; s += 60) {
-  const big = s % 120 === 0;
+for (let s = 0; s <= TOTAL; s += 5) {
+  const big = s % 30 === 0;
   rh += `<i class="tk" style="left:${pct(s)};height:${big?9:4}px"></i>`;
-  if (big && s > 0 && s < TOTAL - 90) rh += `<span class="tc" style="left:${pct(s)}">${tc(s)}</span>`;
+  if (big && s > 0 && s < TOTAL - 20) rh += `<span class="tc" style="left:${pct(s)}">${tc(s)}</span>`;
 }
 let yl = '';
 for (const [y,s] of Object.entries(years)) { rh += `<span class="yr${y==='2027'?' y27':''}" style="left:${pct(s)}">${y}</span>`; yl += `<i style="left:${pct(s)}"></i>`; }
@@ -257,17 +245,17 @@ function lay(list, lane, thumbw) {
     el.appendChild(d); c.el = d;
   });
 }
-lay(v1,'V1',54); lay(v2,'V2',20);
+lay(v1,'V1',60);
 const off = document.createElement('div');
 off.className = 'clip off'; off.style.left = pct(END); off.style.width = pct(GAP);
 off.innerHTML = '<div class="nm">Het_Peloton_2027.mov</div><div class="sub">media offline</div>';
 $('V1').appendChild(off);
-['V2','A1'].forEach(id => { const o = off.cloneNode(false); o.style.left = pct(END); o.style.width = pct(GAP); $(id).appendChild(o); });
+['A1'].forEach(id => { const o = off.cloneNode(false); o.style.left = pct(END); o.style.width = pct(GAP); $(id).appendChild(o); });
 
 // waveforms
 function rng(seed){ return () => (seed = (seed*16807) % 2147483647) / 2147483647; }
 function drawWaves() {
-  [['wa1',v1,'#2A2825','#8f8a81',.95],['wa2',[{s:years['2025'],d:END-years['2025']}],'#1f1e1b','#5f5a52',.55]].forEach(([id,list,bg,fg,amp]) => {
+  [['wa1',v1,'#2A2825','#8f8a81',.95]].forEach(([id,list,bg,fg,amp]) => {
     const cv = $(id), r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
     cv.width = r.width*dpr; cv.height = r.height*dpr;
     const g = cv.getContext('2d'); g.scale(dpr,dpr); const R = rng(27); const H = r.height;
@@ -281,20 +269,17 @@ function drawWaves() {
   });
 }
 
-// playhead + monitor
+// playhead + monitor: the monitor plays the real clip, 1:1 with the timeline
 const vid = $('vid'), mon = $('mon'), ph = $('ph'), dlg = $('dlg');
 let pos = 0, cur = null, dlgShown = false, playing = false, seekPending = null;
-function clipAt(s) {
-  const r = v2.find(c => s >= c.s && s < c.s + c.d); if (r) return r;
-  return v1.find(c => s >= c.s && s < c.s + c.d) || null;
+const clipAt = s => v1.find(c => s >= c.s && s < c.s + c.d) || null;
+function seekTo(t) {
+  if (vid.readyState < 1) { seekPending = t; return; }
+  t = Math.max(0, Math.min(vid.duration - .04, t));
+  if (Math.abs(vid.currentTime - t) > .05) vid.currentTime = t;
 }
-function seekVid(frac) {
-  if (!vid.duration) { seekPending = frac; return; }
-  const t = Math.min(vid.duration - .05, frac * vid.duration);
-  if (Math.abs(vid.currentTime - t) > .04) vid.currentTime = t;
-}
-vid.addEventListener('loadedmetadata', () => { if (seekPending != null) { seekVid(seekPending); seekPending = null; } });
-function set(s) {
+vid.addEventListener('loadedmetadata', () => { if (seekPending != null) { seekTo(seekPending); seekPending = null; } if (playing) vid.play().catch(()=>{}); });
+function set(s, fromVideo) {
   pos = Math.max(0, Math.min(END + GAP, s));
   ph.style.left = pct(pos);
   $('now').textContent = tc(pos);
@@ -302,26 +287,27 @@ function set(s) {
   const isOff = pos >= END;
   mon.classList.toggle('off', isOff);
   if (c !== cur) {
-    if (cur && cur.el) cur.el.classList.remove('cur');
+    if (cur) cur.el.classList.remove('cur');
     cur = c;
-    if (c) { c.el.classList.add('cur'); vid.poster = IMG + c.slug + '.jpg'; vid.src = VID + c.slug + '-preview.mp4'; }
-    else { vid.removeAttribute('src'); vid.poster = ''; vid.load(); }
+    if (c) { c.el.classList.add('cur'); vid.poster = IMG + c.slug + '.jpg'; vid.src = VID + c.slug + '.mp4'; if (playing) vid.play().catch(()=>{}); }
+    else { vid.pause(); vid.removeAttribute('src'); vid.poster = ''; vid.load(); }
     $('clipname').textContent = c ? c.name : (isOff ? 'Het_Peloton_2027.mov' : '');
   }
-  if (c) seekVid((pos - c.s) / c.d);
+  if (c && !fromVideo) seekTo(pos - c.s);
   let on = -1; MARKERS.forEach(([ms],i) => { if (pos >= ms - .01) on = i; });
   document.querySelectorAll('.m').forEach((m,i) => m.classList.toggle('on', i === on));
-  if (isOff && !dlgShown) { dlgShown = true; stop(); setTimeout(() => dlg.classList.add('show'), 450); }
-  if (!isOff) dlgShown = false;
+  if (isOff && !dlgShown) { dlgShown = true; if (playing) stop(); setTimeout(() => dlg.classList.add('show'), 450); }
+  if (!isOff) { dlgShown = false; dlg.classList.remove('show'); }
 }
+vid.addEventListener('ended', () => { if (playing && cur) set(cur.s + cur.d + .001); });
 $('later').onclick = () => dlg.classList.remove('show');
 
 // wheel / drag / keys
 addEventListener('wheel', e => {
   if (innerWidth <= 900 && !$('tl').contains(e.target)) return;
-  e.preventDefault(); stop();
+  e.preventDefault(); if (playing) stop();
   const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-  set(pos + d * 0.2);
+  set(pos + d * 0.04);
 }, {passive:false});
 const lanes = $('lanes');
 function fromX(x) { const r = lanes.getBoundingClientRect(); return (x - r.left) / r.width * TOTAL; }
@@ -329,26 +315,36 @@ let drag = false;
 $('tl').addEventListener('pointerdown', e => { const mk = e.target.closest('.mk'); if (mk) { set(+mk.dataset.s); return; } drag = true; stop(); $('tl').setPointerCapture(e.pointerId); set(fromX(e.clientX)); });
 $('tl').addEventListener('pointermove', e => { if (drag) set(fromX(e.clientX)); });
 $('tl').addEventListener('pointerup', () => drag = false);
-document.querySelectorAll('.m').forEach(m => m.onclick = () => { stop(); set(+m.dataset.s + .01); });
+document.querySelectorAll('.m').forEach(m => m.onclick = () => set(+m.dataset.s + .01));
 addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight') set(pos + (e.shiftKey ? 30 : 5));
-  else if (e.key === 'ArrowLeft') set(pos - (e.shiftKey ? 30 : 5));
+  if (e.key === 'ArrowRight') set(pos + (e.shiftKey ? 5 : 1/25));
+  else if (e.key === 'ArrowLeft') set(pos - (e.shiftKey ? 5 : 1/25));
   else if (e.key === ' ' || e.key.toLowerCase() === 'k') { e.preventDefault(); playing ? stop() : play(); }
   else if (e.key === 'Escape') dlg.classList.remove('show');
 });
 
-// play: runs through the sequence fast, the monitor plays each clip
+// play: real time, with sound
 let raf = 0, last = 0;
-const SPEED = 24;
 const PLAY = '<path d="M1 0l9 5-9 5z"/>', PAUSE = '<path d="M1 0h3v10H1zM6 0h3v10H6z"/>';
-function step(ts) { if (!playing) return; const dt = (ts - last) / 1000; last = ts; set(pos + dt * SPEED); if (pos >= END + GAP) stop(); else raf = requestAnimationFrame(step); }
-function play() { if (pos >= END) set(0); playing = true; $('playIcon').innerHTML = PAUSE; last = performance.now(); raf = requestAnimationFrame(step); }
-function stop() { playing = false; cancelAnimationFrame(raf); $('playIcon').innerHTML = PLAY; }
+function step(ts) {
+  if (!playing) return;
+  const dt = (ts - last) / 1000; last = ts;
+  if (cur) { if (!vid.paused && vid.readyState > 1) set(cur.s + vid.currentTime, true); }
+  else set(pos + dt);
+  raf = requestAnimationFrame(step);
+}
+function play() {
+  if (pos >= END + GAP - .1) set(0);
+  playing = true; vid.muted = false; $('playIcon').innerHTML = PAUSE;
+  if (cur) vid.play().catch(() => { vid.muted = true; vid.play(); });
+  last = performance.now(); raf = requestAnimationFrame(step);
+}
+function stop() { playing = false; cancelAnimationFrame(raf); vid.pause(); $('playIcon').innerHTML = PLAY; }
 $('play').onclick = () => playing ? stop() : play();
-$('toStart').onclick = () => { stop(); dlg.classList.remove('show'); set(0); };
-$('toEnd').onclick = () => { stop(); const n = MARKERS.find(([s]) => s > pos + .5); set(n ? n[0] + .01 : END + GAP); };
+$('toStart').onclick = () => { stop(); set(0); };
+$('toEnd').onclick = () => { const n = MARKERS.find(([s]) => s > pos + .5); set(n ? n[0] + .01 : END + GAP); };
 
-document.documentElement.style.setProperty('--tracks', '0.85fr 1.15fr .8fr .5fr');
+document.documentElement.style.setProperty('--tracks', '1.5fr 1fr');
 drawWaves(); addEventListener('resize', drawWaves);
 set(0.01);
 })();
