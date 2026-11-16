@@ -1,0 +1,42 @@
+name: Nebula macOS app
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'nebula/**'
+      - '.github/workflows/nebula-mac.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nebula-mac
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: nebula
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Build app (ad-hoc signed)
+        run: npx electron-builder --mac zip dmg --arm64 --x64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - run: ls -la dist
+      - name: Publish release "nebula-latest"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete nebula-latest --yes --cleanup-tag || true
+          gh release create nebula-latest dist/*.zip dist/*.dmg \
+            --target "$GITHUB_SHA" \
+            --title "Nebula (laatste build)" \
+            --notes "Automatische build van de Nebula Mac-app (${GITHUB_SHA::7})."

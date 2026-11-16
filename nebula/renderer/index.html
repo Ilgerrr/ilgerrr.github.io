@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'">
+  <title>Nebula</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "../node_modules/three/build/three.module.js",
+        "three/addons/": "../node_modules/three/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body data-view="home" class="booting">
+  <canvas id="gl"></canvas>
+  <div id="shade"></div>
+  <div id="labels"></div>
+  <div id="marker"><i></i></div>
+  <div id="tooltip"></div>
+
+  <header id="topbar">
+    <div class="drag"></div>
+    <button id="vault-chip" class="chip" title="Verbonden vault">
+      <span class="live"></span><span id="vault-name">Vault</span>
+    </button>
+    <nav id="tabs" class="seg">
+      <button data-go="home">Home</button>
+      <button data-go="universe">Universum</button>
+      <button data-go="brain">Brein</button>
+      <span class="seg-ind"></span>
+    </nav>
+    <div class="top-right">
+      <button id="btn-search" class="icon-btn" title="Zoeken (⌘K)">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+        <kbd>⌘K</kbd>
+      </button>
+      <button id="btn-settings" class="icon-btn" title="Instellingen">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <main id="home" class="view">
+    <div class="home-inner">
+      <p class="eyebrow" id="today"></p>
+      <h1 id="greeting">Goedemiddag<span class="dot">.</span></h1>
+      <p class="stats" id="stats"></p>
+
+      <form id="capture" autocomplete="off">
+        <svg class="spark" viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg>
+        <input id="capture-input" placeholder="Leg een gedachte vast — gaat naar je daily note" maxlength="2000">
+        <kbd>↵</kbd>
+      </form>
+
+      <div class="cards">
+        <button class="card" data-go="universe">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.2"/><ellipse cx="12" cy="12" rx="9.5" ry="4" transform="rotate(-25 12 12)"/></svg>
+          <b>Universum</b><span id="card-universe"></span>
+        </button>
+        <button class="card" data-go="brain">
+          <svg viewBox="0 0 24 24"><path d="M9 4.5a3 3 0 0 0-3 3 3 3 0 0 0-2 5.2A3.2 3.2 0 0 0 7 18a2.8 2.8 0 0 0 5 .8V5.6A2.7 2.7 0 0 0 9 4.5zM15 4.5a3 3 0 0 1 3 3 3 3 0 0 1 2 5.2A3.2 3.2 0 0 1 17 18a2.8 2.8 0 0 1-5 .8"/></svg>
+          <b>Brein</b><span id="card-brain"></span>
+        </button>
+        <button class="card" id="card-daily-btn">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4.5" width="16" height="15.5" rx="3"/><path d="M8 2.8v3.4M16 2.8v3.4M4 9.5h16"/></svg>
+          <b>Vandaag</b><span id="card-daily">Daily note</span>
+        </button>
+        <button class="card" data-action="search">
+          <svg viewBox="0 0 24 24"><path d="M6 3.5h8.5L19 8v12.5H6z"/><path d="M14 3.5V8h5M9 13h7M9 16.5h5"/></svg>
+          <b>Notes</b><span id="card-notes"></span>
+        </button>
+      </div>
+
+      <button id="claude-cta" class="claude-cta glass" hidden>
+        <span class="cl-mark">✳</span>
+        <span><b>Breng je Claude-chats naar je universum</b><small>Elke chat wordt een ster, gelinkt aan de notes waar hij over gaat.</small></span>
+        <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+
+      <div class="home-grid">
+        <section class="glass block">
+          <header><h3>Recent</h3><span class="muted" id="recent-count"></span></header>
+          <ul id="recent" class="recent"></ul>
+        </section>
+        <section class="glass block">
+          <header><h3>Stelsels</h3><span class="muted" id="gal-count"></span></header>
+          <ul id="gal-list" class="gal-list"></ul>
+        </section>
+        <section class="glass block wide">
+          <header><h3>Activiteit</h3><span class="muted" id="activity-label"></span></header>
+          <div id="heatmap" class="heatmap"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- NOTE PANEL -->
+  <aside id="panel" class="glass">
+    <button class="close" id="panel-close" title="Sluiten (Esc)">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <div class="panel-meta"><span class="gal-dot"></span><span id="panel-gal"></span></div>
+    <h2 id="panel-title"></h2>
+    <p class="panel-sub" id="panel-sub"></p>
+    <div class="panel-tags" id="panel-tags"></div>
+    <div class="panel-body md" id="panel-body"></div>
+    <div class="panel-links">
+      <h4>Verbonden <span id="panel-nb-count"></span></h4>
+      <ul id="panel-nb"></ul>
+    </div>
+    <button class="primary" id="panel-open">
+      <svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+      Open in Obsidian
+    </button>
+  </aside>
+
+  <!-- DOCK -->
+  <footer id="dock">
+    <div class="hint" id="hint">Klik een ster · sleep om te draaien · scroll om te zoomen</div>
+    <div class="dock glass">
+      <button id="play" class="round" title="Laat groeien (spatie)">
+        <svg class="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg>
+        <svg class="i-pause" viewBox="0 0 24 24"><path d="M8 5h3v14H8zM13 5h3v14h-3z"/></svg>
+      </button>
+      <div class="timeline">
+        <span id="tl-date">—</span>
+        <input id="tl" type="range" min="0" max="1000" value="1000">
+        <span id="tl-count" class="muted"></span>
+      </div>
+      <span class="sep"></span>
+      <div class="seg small" id="morph-seg">
+        <button data-morph="0">Universum</button>
+        <button data-morph="1">Brein</button>
+      </div>
+      <span class="sep"></span>
+      <button id="rec" class="pill" title="Opnemen"><i class="rec-dot"></i><span>Opnemen</span></button>
+      <button id="clean" class="pill" title="Clean view (H)">
+        <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      </button>
+    </div>
+  </footer>
+
+  <!-- SEARCH -->
+  <div id="search" class="modal">
+    <div class="modal-card glass">
+      <div class="search-row">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+        <input id="search-input" placeholder="Zoek in je notes…" autocomplete="off" spellcheck="false">
+        <kbd>esc</kbd>
+      </div>
+      <ul id="search-results"></ul>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="settings" class="modal">
+    <div class="modal-card glass settings-card">
+      <h3>Instellingen</h3>
+      <label class="field"><span>Hoe mag ik je noemen?</span><input id="set-name" maxlength="40"></label>
+      <div class="field">
+        <span>Obsidian-vault</span>
+        <div class="vault-current"><code id="set-vault"></code><button id="set-reveal" class="link">Toon in Finder</button></div>
+        <ul id="set-vaults" class="vault-list"></ul>
+        <button id="set-choose" class="ghost">Andere map kiezen…</button>
+      </div>
+      <div class="field">
+        <span>Claude</span>
+        <div class="claude-rows">
+          <div class="claude-row">
+            <div><b>Claude Desktop</b><small id="cl-desktop-status">Laat Claude je vault lezen, schrijven en Nebula besturen</small></div>
+            <button id="cl-desktop" class="ghost small">Verbind</button>
+          </div>
+          <div class="claude-row">
+            <div><b>Claude Code</b><small>Plak dit commando één keer in Terminal</small></div>
+            <button id="cl-code" class="ghost small">Kopieer commando</button>
+          </div>
+          <div class="claude-row">
+            <div><b>Chats van claude.ai</b><small>Automatisch zodra je export in Downloads staat. (claude.ai → Instellingen → Privacy → Exporteer data)</small></div>
+            <button id="cl-export" class="ghost small">Importeer…</button>
+          </div>
+          <div class="claude-row">
+            <div><b>Claude Code-sessies</b><small class="ok">Automatisch — nieuwe chats komen er vanzelf in</small></div>
+            <button id="cl-sessions" class="ghost small">Nu syncen</button>
+          </div>
+        </div>
+      </div>
+      <div class="settings-foot"><span class="muted">Sneltoetsen: 1 2 3 · spatie · ⌘K · H · Esc</span><button id="set-done" class="primary small">Klaar</button></div>
+    </div>
+  </div>
+
+  <!-- ONBOARDING -->
+  <div id="onboard">
+    <div class="onboard-card">
+      <div class="logo"><span></span></div>
+      <h1>Je notes,<br>als universum<span class="dot">.</span></h1>
+      <p>Verbind je Obsidian-vault. Elke map wordt een sterrenstelsel, elke link een lichtspoor. Alles blijft op je Mac.</p>
+      <ul id="ob-vaults" class="vault-list"></ul>
+      <div class="ob-actions">
+        <button id="ob-choose" class="primary">Kies je vault-map</button>
+        <button id="ob-demo" class="ghost">Bekijk demo</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <div id="rec-badge"><i></i><span>REC 0:00</span></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
