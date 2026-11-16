@@ -101,15 +101,20 @@ canvas.wv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .dlg .bt a,.dlg .bt button{padding:7px 16px;border-radius:5px;border:1px solid #3d3a35;color:var(--stone)}
 .dlg .bt a{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
 @media (max-width:900px){
-  html,body{overflow:auto}
-  .app{height:auto;grid-template-rows:auto auto auto;padding:8px}
+  .app{grid-template-rows:32px minmax(0,1fr) minmax(0,1.15fr);padding:6px;gap:5px}
+  .bar img{height:18px}
+  .bar{font-size:11px}
   .bar .file,.proj,.mks{display:none}
   .top{grid-template-columns:1fr}
-  .mon .screen{aspect-ratio:16/9;flex:none}
-  .tlp{height:300px}
-  .tl{grid-template-columns:40px 1fr}
-  .heads div{padding-left:8px}
+  .tab{height:26px;font-size:11px}
+  .ctrl{height:32px;font-size:12px}
+  .ctrl .now,.ctrl .dur{min-width:0}
+  .tl{grid-template-columns:34px 1fr}
+  .heads,.lanes{grid-template-rows:34px var(--tracks)}
+  .heads div{padding-left:7px;font-size:10px}
   .ruler .tc{display:none}
+  .ruler .mk{top:15px}
+  .lanes{margin-right:6px}
   .tlp .tab .hint{display:none}
 }
 </style>
