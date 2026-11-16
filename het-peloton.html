@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Ilger_x_HetPeloton_v27</title>
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:Archivo;src:url(assets/fonts/archivo.woff2) format("woff2-variations"),url(assets/fonts/archivo.woff2) format("woff2");font-weight:100 900;font-stretch:62% 125%}
+:root{--red:#F13936;--black:#080807;--paper:#EFEBE4;--stone:#A39D93;--graphite:#2A2825;--panel:#141311;--line:#22201d;--dim:#6f6a62}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--black);color:var(--paper);font-family:Archivo,sans-serif;font-variant-numeric:tabular-nums;overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+.app{height:100%;display:grid;grid-template-rows:44px minmax(0,1.15fr) minmax(0,1fr);gap:6px;padding:10px;user-select:none}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:0 6px;font-size:13px}
+.bar img{height:22px;display:block}
+.bar .file{color:var(--stone)}
+.bar .file b{color:var(--paper);font-weight:600}
+.rec{display:flex;align-items:center;gap:8px;color:var(--stone)}
+.rec i{width:10px;height:10px;border-radius:50%;background:var(--red);display:block}
+.panel{background:var(--panel);border-radius:6px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.tab{height:30px;flex:none;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--dim)}
+.tab b{color:var(--paper);font-weight:600}
+.top{display:grid;grid-template-columns:minmax(200px,.8fr) minmax(0,2.2fr) minmax(240px,.9fr);gap:6px;min-height:0}
+/* project */
+.proj .body{padding:12px;display:flex;flex-direction:column;gap:7px;font-size:13px;flex:1;min-height:0;overflow:hidden}
+.b{display:flex;align-items:center;gap:9px;color:#cfcac2}
+.b i{width:15px;height:11px;border-radius:2px;background:#3b3934;flex:none;position:relative}
+.b i:before{content:"";position:absolute;left:0;top:-3px;width:7px;height:4px;background:inherit;border-radius:2px 2px 0 0}
+.b.pel{color:var(--paper);font-weight:700;margin-top:4px}
+.b.pel i{background:var(--red)}
+.b.pel em{font-style:normal;color:var(--stone);font-weight:400;margin-left:auto}
+.site{margin-top:auto;border-top:1px solid var(--line);padding-top:10px;color:var(--stone);font-size:12px}
+.site b{display:block;color:var(--paper);font-weight:600;font-size:13px}
+/* monitor */
+.mon .screen{flex:1;min-height:0;background:#000;position:relative;display:flex;align-items:center;justify-content:center}
+.mon video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
+.offline{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:repeating-linear-gradient(45deg,#F13936 0 10px,#c92b28 10px 20px);color:#fff;text-align:center}
+.offline b{font-size:clamp(18px,2.4vw,34px);font-weight:900;font-stretch:125%;line-height:1}
+.offline span{font-size:14px;opacity:.9}
+.mon.off .offline{display:flex}
+.ctrl{height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-top:1px solid var(--line);font-size:14px}
+.ctrl .now{color:var(--red);font-weight:700;min-width:110px}
+.ctrl .dur{color:var(--stone);min-width:110px;text-align:right}
+.ctrl .btns{display:flex;gap:16px;align-items:center}
+.ctrl .btns button{opacity:.85;display:flex}
+.ctrl .btns button:hover{opacity:1}
+.ctrl svg{height:14px;fill:var(--stone)}
+.ctrl #play svg{fill:var(--paper);height:16px}
+/* markers */
+.mks .body{overflow:auto;flex:1}
+.m{display:grid;grid-template-columns:18px 86px 1fr;gap:6px;padding:9px 12px;font-size:12.5px;border-bottom:1px solid #1d1c19;align-items:baseline;width:100%;text-align:left;transition:background .15s}
+.m:hover{background:#1b1a17}
+.m .n{color:var(--stone);font-weight:700}
+.m .t{color:var(--dim)}
+.m .d{color:#d9d4cc;line-height:1.3}
+.m.on{background:#1f1d1a}
+.m.on .n,.m.on .d{color:var(--paper)}
+.m.r .n,.m.r .d{color:var(--red);font-weight:700}
+/* timeline */
+.tlp .tab .hint{color:var(--stone)}
+.tl{flex:1;min-height:0;display:grid;grid-template-columns:62px 1fr;position:relative;cursor:ew-resize;touch-action:none}
+.heads{display:grid;grid-template-rows:42px var(--tracks);row-gap:4px;padding-bottom:6px}
+.heads div{background:#1c1b19;display:flex;align-items:center;padding-left:12px;font-size:12px;font-weight:700;color:var(--stone)}
+.heads div:first-child{background:none}
+.lanes{position:relative;display:grid;grid-template-rows:42px var(--tracks);row-gap:4px;padding-bottom:6px;margin-right:14px}
+.ruler{position:relative;background:#141311;border-bottom:1px solid var(--line)}
+.ruler .tk{position:absolute;bottom:0;width:1px;background:#4a4640}
+.ruler .tc{position:absolute;bottom:4px;font-size:9.5px;color:#7d776e;padding-left:4px;white-space:nowrap}
+.ruler .yr{position:absolute;top:4px;font-size:12px;font-weight:700;padding-left:5px}
+.ruler .yr.y27{color:var(--red)}
+.ruler .mk{position:absolute;top:19px;width:12px;height:13px;margin-left:-6px;background:var(--paper);clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%);font-size:8px;font-weight:800;color:var(--black);text-align:center;line-height:10px;cursor:pointer}
+.ruler .mk.r{background:var(--red)}
+.ylines{position:absolute;inset:0;pointer-events:none}
+.ylines i{position:absolute;top:0;bottom:0;width:1px;background:#24221f}
+.lane{position:relative;background:#100f0e}
+.clip{position:absolute;top:0;bottom:0;border-radius:3px;overflow:hidden;background:#3b3934;border:1px solid #080807}
+.clip .nm{position:absolute;left:0;right:0;top:0;height:15px;padding:0 5px;font-size:9.5px;font-weight:600;line-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:inherit;z-index:1}
+.clip .th{position:absolute;top:15px;bottom:0;left:0;background-size:cover;background-position:center}
+.clip .th.e{left:auto;right:0;opacity:.9}
+.v2 .clip{background:#57534c}
+.clip.cur{outline:1.5px solid var(--paper);outline-offset:-1.5px}
+.clip.off{background:repeating-linear-gradient(45deg,#F13936 0 6px,#c92b28 6px 12px);border-color:#F13936}
+.clip.off .nm{background:none;color:#fff;font-size:12px;font-weight:800;top:6px}
+.clip.off .sub{position:absolute;left:5px;top:24px;font-size:10.5px;color:#fff;opacity:.85}
+canvas.wv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.ph{position:absolute;top:22px;bottom:6px;width:0;pointer-events:none;z-index:5}
+.ph:before{content:"";position:absolute;left:-1px;top:6px;bottom:0;width:2px;background:var(--red)}
+.ph:after{content:"";position:absolute;left:-7px;top:0;width:14px;height:12px;background:var(--red);clip-path:polygon(0 0,100% 0,100% 55%,50% 100%,0 55%)}
+/* dialog */
+.dlg{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);width:min(360px,90vw);background:#1f1e1b;border:1px solid #34322d;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.75);font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:20}
+.dlg.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.dlg .h{padding:13px 16px;border-bottom:1px solid #2c2a26;font-weight:700;display:flex;justify-content:space-between}
+.dlg .h span{color:var(--dim);font-weight:400}
+.dlg .c{padding:16px;color:#cfcac2;line-height:1.45}
+.dlg .c b{color:var(--paper)}
+.dlg .bt{display:flex;justify-content:flex-end;gap:10px;padding:0 16px 16px}
+.dlg .bt a,.dlg .bt button{padding:7px 16px;border-radius:5px;border:1px solid #3d3a35;color:var(--stone)}
+.dlg .bt a{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
+@media (max-width:900px){
+  html,body{overflow:auto}
+  .app{height:auto;grid-template-rows:auto auto auto;padding:8px}
+  .bar .file,.proj,.mks{display:none}
+  .top{grid-template-columns:1fr}
+  .mon .screen{aspect-ratio:16/9;flex:none}
+  .tlp{height:300px}
+  .tl{grid-template-columns:40px 1fr}
+  .heads div{padding-left:8px}
+  .ruler .tc{display:none}
+  .tlp .tab .hint{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar">
+    <a href="index.html"><img src="assets/img/logo-wit.svg" alt="ilger."></a>
+    <div class="file"><b>Ilger_x_HetPeloton_v27</b>.prproj</div>
+    <div class="rec"><i></i>Ilger Albert, productie &amp; post</div>
+  </div>
+
+  <div class="top">
+    <div class="panel proj">
+      <div class="tab"><b>Project</b><span>Media</span></div>
+      <div class="body" id="bins"></div>
+    </div>
+    <div class="panel mon" id="mon">
+      <div class="tab"><b>Program: Ilger_x_HetPeloton_v27</b><span id="clipname"></span></div>
+      <div class="screen">
+        <video id="vid" muted playsinline preload="auto"></video>
+        <div class="offline"><b>Het_Peloton_2027.mov</b><span>media offline</span></div>
+      </div>
+      <div class="ctrl">
+        <span class="now" id="now">00:00:00:00</span>
+        <div class="btns">
+          <button id="toStart" aria-label="Naar begin"><svg viewBox="0 0 12 10"><path d="M0 0h1.8v10H0zM2 5l7-5v10z"/></svg></button>
+          <button id="play" aria-label="Afspelen"><svg viewBox="0 0 10 10" id="playIcon"><path d="M1 0l9 5-9 5z"/></svg></button>
+          <button id="toEnd" aria-label="Naar volgende marker"><svg viewBox="0 0 12 10"><path d="M0 0l7 5-7 5zM10 0h1.8v10H10z"/></svg></button>
+        </div>
+        <span class="dur" id="dur"></span>
+      </div>
+    </div>
+    <div class="panel mks">
+      <div class="tab"><b>Markers</b></div>
+      <div class="body" id="markers"></div>
+    </div>
+  </div>
+
+  <div class="panel tlp">
+    <div class="tab"><b>Ilger_x_HetPeloton_v27</b><span class="hint">scroll of sleep om door de tijdlijn te gaan</span></div>
+    <div class="tl" id="tl">
+      <div class="heads"><div></div><div>V2</div><div>V1</div><div>A1</div><div>A2</div></div>
+      <div class="lanes" id="lanes">
+        <div class="ruler" id="ruler"></div>
+        <div class="lane v2" id="V2"></div>
+        <div class="lane v1" id="V1"></div>
+        <div class="lane" id="A1"><canvas class="wv" id="wa1"></canvas></div>
+        <div class="lane" id="A2"><canvas class="wv" id="wa2"></canvas></div>
+        <div class="ylines" id="ylines"></div>
+        <div class="ph" id="ph"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dlg" id="dlg" role="dialog" aria-label="Media koppelen">
+  <div class="h">Media koppelen <span>1 clip</span></div>
+  <div class="c"><b>Het_Peloton_2027.mov</b> is offline.</div>
+  <div class="bt"><button id="later">Later</button><a href="index.html#contact">Koppelen</a></div>
+</div>
+
+<script>
+(() => {
+const FPS = 25;
+const V1 = [
+  ['2024','splintertime','Splintertime.mp4',105],
+  ['2025','documentaire','Documentaire.mp4',180],
+  ['2025','bnix-aftermovie','BNIX_30jaar_aftermovie.mp4',129],
+  ['2025','bnix-testimonials','BNIX_30jaar_testimonials.mp4',179],
+  ['2025','heylen-gsj','Heylen_x_GSJ.mp4',33],
+  ['2025','bumaco','Bumaco_Boutique.mp4',60],
+  ['2025','reportage','Kotbelasting.mp4',185],
+  ['2026','ostend-aftermovie','OstendBeach_aftermovie.mp4',125],
+  ['2026','tnc','TNC.mp4',83],
+  ['2026','exr','EXR_commercial.mp4',57],
+  ['2026','cdrc-1','SimonHaex_x_CDRC.mp4',60],
+  ['2026','diepgang','Diepgang.mp4',55],
+  ['2026','bambata','Bambata.mp4',75],
+  ['2026','spec-ferrari','Spec_Ferrari.mp4',30]
+];
+const REELS = [['tutto-dayrecap','Tuttobene_dayrecap.mp4',25],['tutto-opening','Tuttobene_opening.mp4',25],['tml-cocacola','TML_CocaCola.mp4',30],['tml-absolut','TML_Absolut.mp4',35],['tml-lidl','TML_Lidl.mp4',16],['tml-loop','TML_Loop.mp4',17],['bks-pommelien','BKS_Pommelien.mp4',37],['obf-joris','OBF_JorisVoorn.mp4',20]];
+const RGAPS = [4,22,3,3,3,26,30];
+const GAP = 210;
+
+let t = 0; const years = {}; const v1 = [];
+for (const [y,slug,name,d] of V1) { if (!(y in years)) years[y] = t; v1.push({s:t,d,slug,name}); t += d; }
+const END = t; years['2027'] = END;
+const TOTAL = END + GAP + 40;
+const v2 = []; t = years['2026'] + 8;
+REELS.forEach(([slug,name,d],i) => { v2.push({s:t,d,slug,name}); t += d + (RGAPS[i] || 0); });
+const at = (slug, l) => l.find(c => c.slug === slug).s;
+const MARKERS = [
+  [at('bnix-aftermovie',v1),'bnix 30 jaar. aftermovie en testimonials'],
+  [at('reportage',v1)-20,'eigen zaak, ilger albert. sinds 18.08.2025'],
+  [at('tutto-dayrecap',v2),'tuttobene. 20+ shooters, gemonteerd op locatie'],
+  [at('tml-cocacola',v2),'tomorrowland voor fd. 5 merken, geen tijd'],
+  [at('exr',v1),'exr commercial, samen met florian'],
+  [at('spec-ferrari',v1),'spec ferrari. cinemalenzen, als een echte set'],
+  [END,'het peloton']
+];
+
+const tc = s => { s = Math.max(0,s); const f = Math.floor((s%1)*FPS), i = Math.floor(s);
+  return [Math.floor(i/3600), Math.floor(i%3600/60), i%60, f].map(n => String(n).padStart(2,'0')).join(':'); };
+const pct = s => (s / TOTAL * 100) + '%';
+const $ = id => document.getElementById(id);
+const IMG = 'assets/img/', VID = 'assets/video/';
+
+// bins
+const bins = ['FD Productions','Race Service','Best Kept Secret','Ostend Beach','BNIX','Heylen Vastgoed','GSJ Advocaten','Bumaco Boutique','Arteveldehogeschool'];
+$('bins').innerHTML = bins.map(b => `<div class="b"><i></i>${b}</div>`).join('') +
+  `<div class="b pel"><i></i>Het Peloton<em>0 items</em></div>` +
+  `<a class="site" href="index.html"><b>ilgerrr.github.io</b>alle footage, volledige credits</a>`;
+
+// markers panel
+$('markers').innerHTML = MARKERS.map(([s,d],i) =>
+  `<button class="m${i===MARKERS.length-1?' r':''}" data-s="${s}"><span class="n">${i+1}</span><span class="t">${tc(s)}</span><span class="d">${d}</span></button>`).join('');
+$('dur').textContent = tc(END + GAP);
+
+// ruler
+const ruler = $('ruler'); let rh = '';
+for (let s = 0; s <= TOTAL; s += 60) {
+  const big = s % 120 === 0;
+  rh += `<i class="tk" style="left:${pct(s)};height:${big?9:4}px"></i>`;
+  if (big && s > 0 && s < TOTAL - 90) rh += `<span class="tc" style="left:${pct(s)}">${tc(s)}</span>`;
+}
+let yl = '';
+for (const [y,s] of Object.entries(years)) { rh += `<span class="yr${y==='2027'?' y27':''}" style="left:${pct(s)}">${y}</span>`; yl += `<i style="left:${pct(s)}"></i>`; }
+MARKERS.forEach(([s],i) => rh += `<span class="mk${i===MARKERS.length-1?' r':''}" data-s="${s}" style="left:${pct(s)}">${i+1}</span>`);
+ruler.innerHTML = rh; $('ylines').innerHTML = yl;
+
+// clips
+function lay(list, lane, thumbw) {
+  const el = $(lane);
+  list.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'clip'; d.style.left = pct(c.s); d.style.width = `calc(${pct(c.d)} - 1px)`;
+    d.innerHTML = `<div class="nm">${c.name}</div><div class="th" style="width:${thumbw}px;max-width:100%;background-image:url(${IMG}${c.slug}.jpg)"></div>` +
+                  `<div class="th e" style="width:${thumbw}px;background-image:url(${IMG}${c.slug}.jpg)"></div>`;
+    el.appendChild(d); c.el = d;
+  });
+}
+lay(v1,'V1',54); lay(v2,'V2',20);
+const off = document.createElement('div');
+off.className = 'clip off'; off.style.left = pct(END); off.style.width = pct(GAP);
+off.innerHTML = '<div class="nm">Het_Peloton_2027.mov</div><div class="sub">media offline</div>';
+$('V1').appendChild(off);
+['V2','A1'].forEach(id => { const o = off.cloneNode(false); o.style.left = pct(END); o.style.width = pct(GAP); $(id).appendChild(o); });
+
+// waveforms
+function rng(seed){ return () => (seed = (seed*16807) % 2147483647) / 2147483647; }
+function drawWaves() {
+  [['wa1',v1,'#2A2825','#8f8a81',.95],['wa2',[{s:years['2025'],d:END-years['2025']}],'#1f1e1b','#5f5a52',.55]].forEach(([id,list,bg,fg,amp]) => {
+    const cv = $(id), r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+    cv.width = r.width*dpr; cv.height = r.height*dpr;
+    const g = cv.getContext('2d'); g.scale(dpr,dpr); const R = rng(27); const H = r.height;
+    list.forEach(c => {
+      const x0 = c.s/TOTAL*r.width + .5, x1 = (c.s+c.d)/TOTAL*r.width - .5;
+      g.fillStyle = bg; g.beginPath(); g.roundRect(x0,0,x1-x0,H,3); g.fill();
+      g.fillStyle = fg;
+      for (let x = x0+1; x < x1-1; x += 2) { const a = Math.pow(R(),1.6)*amp*(H/2-3)+1; g.fillRect(x, H/2-a, 1.2, a*2); }
+    });
+    if (id === 'wa1') { g.fillStyle = '#F13936'; }
+  });
+}
+
+// playhead + monitor
+const vid = $('vid'), mon = $('mon'), ph = $('ph'), dlg = $('dlg');
+let pos = 0, cur = null, dlgShown = false, playing = false, seekPending = null;
+function clipAt(s) {
+  const r = v2.find(c => s >= c.s && s < c.s + c.d); if (r) return r;
+  return v1.find(c => s >= c.s && s < c.s + c.d) || null;
+}
+function seekVid(frac) {
+  if (!vid.duration) { seekPending = frac; return; }
+  const t = Math.min(vid.duration - .05, frac * vid.duration);
+  if (Math.abs(vid.currentTime - t) > .04) vid.currentTime = t;
+}
+vid.addEventListener('loadedmetadata', () => { if (seekPending != null) { seekVid(seekPending); seekPending = null; } });
+function set(s) {
+  pos = Math.max(0, Math.min(END + GAP, s));
+  ph.style.left = pct(pos);
+  $('now').textContent = tc(pos);
+  const c = clipAt(pos);
+  const isOff = pos >= END;
+  mon.classList.toggle('off', isOff);
+  if (c !== cur) {
+    if (cur && cur.el) cur.el.classList.remove('cur');
+    cur = c;
+    if (c) { c.el.classList.add('cur'); vid.poster = IMG + c.slug + '.jpg'; vid.src = VID + c.slug + '-preview.mp4'; }
+    else { vid.removeAttribute('src'); vid.poster = ''; vid.load(); }
+    $('clipname').textContent = c ? c.name : (isOff ? 'Het_Peloton_2027.mov' : '');
+  }
+  if (c) seekVid((pos - c.s) / c.d);
+  let on = -1; MARKERS.forEach(([ms],i) => { if (pos >= ms - .01) on = i; });
+  document.querySelectorAll('.m').forEach((m,i) => m.classList.toggle('on', i === on));
+  if (isOff && !dlgShown) { dlgShown = true; stop(); setTimeout(() => dlg.classList.add('show'), 450); }
+  if (!isOff) dlgShown = false;
+}
+$('later').onclick = () => dlg.classList.remove('show');
+
+// wheel / drag / keys
+addEventListener('wheel', e => {
+  if (innerWidth <= 900 && !$('tl').contains(e.target)) return;
+  e.preventDefault(); stop();
+  const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+  set(pos + d * 0.2);
+}, {passive:false});
+const lanes = $('lanes');
+function fromX(x) { const r = lanes.getBoundingClientRect(); return (x - r.left) / r.width * TOTAL; }
+let drag = false;
+$('tl').addEventListener('pointerdown', e => { const mk = e.target.closest('.mk'); if (mk) { set(+mk.dataset.s); return; } drag = true; stop(); $('tl').setPointerCapture(e.pointerId); set(fromX(e.clientX)); });
+$('tl').addEventListener('pointermove', e => { if (drag) set(fromX(e.clientX)); });
+$('tl').addEventListener('pointerup', () => drag = false);
+document.querySelectorAll('.m').forEach(m => m.onclick = () => { stop(); set(+m.dataset.s + .01); });
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') set(pos + (e.shiftKey ? 30 : 5));
+  else if (e.key === 'ArrowLeft') set(pos - (e.shiftKey ? 30 : 5));
+  else if (e.key === ' ' || e.key.toLowerCase() === 'k') { e.preventDefault(); playing ? stop() : play(); }
+  else if (e.key === 'Escape') dlg.classList.remove('show');
+});
+
+// play: runs through the sequence fast, the monitor plays each clip
+let raf = 0, last = 0;
+const SPEED = 24;
+const PLAY = '<path d="M1 0l9 5-9 5z"/>', PAUSE = '<path d="M1 0h3v10H1zM6 0h3v10H6z"/>';
+function step(ts) { if (!playing) return; const dt = (ts - last) / 1000; last = ts; set(pos + dt * SPEED); if (pos >= END + GAP) stop(); else raf = requestAnimationFrame(step); }
+function play() { if (pos >= END) set(0); playing = true; $('playIcon').innerHTML = PAUSE; last = performance.now(); raf = requestAnimationFrame(step); }
+function stop() { playing = false; cancelAnimationFrame(raf); $('playIcon').innerHTML = PLAY; }
+$('play').onclick = () => playing ? stop() : play();
+$('toStart').onclick = () => { stop(); dlg.classList.remove('show'); set(0); };
+$('toEnd').onclick = () => { stop(); const n = MARKERS.find(([s]) => s > pos + .5); set(n ? n[0] + .01 : END + GAP); };
+
+document.documentElement.style.setProperty('--tracks', '0.85fr 1.15fr .8fr .5fr');
+drawWaves(); addEventListener('resize', drawWaves);
+set(0.01);
+})();
+</script>
+</body>
+</html>
