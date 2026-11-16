@@ -8,8 +8,8 @@
   <script type="importmap">
     {
       "imports": {
-        "three": "../node_modules/three/build/three.module.js",
-        "three/addons/": "../node_modules/three/examples/jsm/"
+        "three": "./vendor/three/three.module.js",
+        "three/addons/": "./vendor/three/addons/"
       }
     }
   </script>
@@ -29,7 +29,6 @@
     <nav id="tabs" class="seg">
       <button data-go="home">Home</button>
       <button data-go="universe">Universum</button>
-      <button data-go="brain">Brein</button>
       <span class="seg-ind"></span>
     </nav>
     <div class="top-right">
@@ -51,19 +50,15 @@
       <p class="stats" id="stats"></p>
 
       <form id="capture" autocomplete="off">
-        <svg class="spark" viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg>
-        <input id="capture-input" placeholder="Leg een gedachte vast — gaat naar je daily note" maxlength="2000">
-        <kbd>↵</kbd>
+        <span class="orb small"></span>
+        <input id="capture-input" placeholder="Hey Nebula… herinner me, plan, open, onthoud" maxlength="4000">
+        <kbd>⌥ Spatie</kbd>
       </form>
 
       <div class="cards">
         <button class="card" data-go="universe">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.2"/><ellipse cx="12" cy="12" rx="9.5" ry="4" transform="rotate(-25 12 12)"/></svg>
           <b>Universum</b><span id="card-universe"></span>
-        </button>
-        <button class="card" data-go="brain">
-          <svg viewBox="0 0 24 24"><path d="M9 4.5a3 3 0 0 0-3 3 3 3 0 0 0-2 5.2A3.2 3.2 0 0 0 7 18a2.8 2.8 0 0 0 5 .8V5.6A2.7 2.7 0 0 0 9 4.5zM15 4.5a3 3 0 0 1 3 3 3 3 0 0 1 2 5.2A3.2 3.2 0 0 1 17 18a2.8 2.8 0 0 1-5 .8"/></svg>
-          <b>Brein</b><span id="card-brain"></span>
         </button>
         <button class="card" id="card-daily-btn">
           <svg viewBox="0 0 24 24"><rect x="4" y="4.5" width="16" height="15.5" rx="3"/><path d="M8 2.8v3.4M16 2.8v3.4M4 9.5h16"/></svg>
@@ -132,17 +127,25 @@
         <span id="tl-count" class="muted"></span>
       </div>
       <span class="sep"></span>
-      <div class="seg small" id="morph-seg">
-        <button data-morph="0">Universum</button>
-        <button data-morph="1">Brein</button>
-      </div>
-      <span class="sep"></span>
       <button id="rec" class="pill" title="Opnemen"><i class="rec-dot"></i><span>Opnemen</span></button>
       <button id="clean" class="pill" title="Clean view (H)">
         <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
       </button>
     </div>
   </footer>
+
+  <!-- HEY NEBULA -->
+  <div id="hey" class="modal">
+    <div class="modal-card glass nebula-card">
+      <form id="nb-form" class="nb-row" autocomplete="off">
+        <span class="orb"></span>
+        <input id="nb-input" placeholder="Hey Nebula…" maxlength="4000" spellcheck="false">
+        <button type="button" id="nb-new" class="nb-new" title="Nieuw gesprek (⌘N)">Nieuw</button>
+      </form>
+      <div id="nb-thread" class="nb-thread"></div>
+      <div class="nb-foot"><span>Dicteren: druk 2× op <kbd>fn</kbd></span><span><kbd>↵</kbd> vraag · <kbd>esc</kbd> sluit</span></div>
+    </div>
+  </div>
 
   <!-- SEARCH -->
   <div id="search" class="modal">
@@ -188,7 +191,7 @@
           </div>
         </div>
       </div>
-      <div class="settings-foot"><span class="muted">Sneltoetsen: 1 2 3 · spatie · ⌘K · H · Esc</span><button id="set-done" class="primary small">Klaar</button></div>
+      <div class="settings-foot"><span class="muted">Sneltoetsen: ⌥Spatie of / Nebula · ⌘K zoeken · 1 2 · H · Esc</span><button id="set-done" class="primary small">Klaar</button></div>
     </div>
   </div>
 

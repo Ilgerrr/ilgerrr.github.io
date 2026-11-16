@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Nebula MCP server (stdio). Lets Claude search, read and write the Obsidian vault Nebula is connected to,
-// and steer the Nebula app (fly to a note, switch to the brain view).
+// remember facts, set Apple Reminders/Calendar items, open apps and steer the Nebula app.
 // Runs with plain Node or with the Nebula app binary (ELECTRON_RUN_AS_NODE=1).
 const fs = require('fs');
 const fsp = fs.promises;
@@ -9,8 +9,10 @@ const os = require('os');
 const http = require('http');
 const vault = require('../src/vault');
 const claude = require('../src/claude-import');
+const mac = require('../src/mac');
+const memory = require('../src/memory');
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 
 function userDataDir() {
   const home = os.homedir();
@@ -88,8 +90,43 @@ const TOOLS = [
   },
   {
     name: 'nebula_show',
-    description: 'Stuur de Nebula-app aan: vlieg naar een note in het universum, of wissel van weergave (home, universe, brain).',
-    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'note om te tonen (optioneel)' }, view: { type: 'string', enum: ['home', 'universe', 'brain'] } } }
+    description: 'Stuur de Nebula-app aan: vlieg naar een note in het universum, of wissel van weergave (home, universe).',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'note om te tonen (optioneel)' }, view: { type: 'string', enum: ['home', 'universe'] } } }
+  },
+  {
+    name: 'nebula_memory',
+    description: 'Lees wat Nebula over de gebruiker onthouden heeft (plannen, voorkeuren, mensen, feiten). Lees dit aan het begin van een gesprek.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'nebula_remember',
+    description: 'Onthoud een feit over de gebruiker voor latere gesprekken, bv. "Gaat volgende week skiën in Oostenrijk" of "Karen neemt elke ochtend haar pillen". Schrijf het als korte zin in de derde persoon, met concrete datums i.p.v. "volgende week". Geef until (YYYY-MM-DD) als het feit daarna niet meer geldt.',
+    inputSchema: { type: 'object', properties: { fact: { type: 'string' }, until: { type: 'string', description: 'YYYY-MM-DD, optioneel' } }, required: ['fact'] }
+  },
+  {
+    name: 'nebula_forget',
+    description: 'Haal feiten uit het geheugen die een stukje tekst bevatten.',
+    inputSchema: { type: 'object', properties: { text: { type: 'string' } }, required: ['text'] }
+  },
+  {
+    name: 'nebula_reminder',
+    description: 'Zet een herinnering in Apple Herinneringen op de Mac (iCloud zet hem met melding op de iPhone). when is lokale tijd "YYYY-MM-DDTHH:mm" — reken relatieve tijden ("over 5 min", "morgen om 9u") zelf uit vanaf de huidige tijd.',
+    inputSchema: { type: 'object', properties: { title: { type: 'string' }, when: { type: 'string', description: 'YYYY-MM-DDTHH:mm lokale tijd, optioneel' }, notes: { type: 'string' }, list: { type: 'string', description: 'naam van de lijst, optioneel' } }, required: ['title'] }
+  },
+  {
+    name: 'nebula_event',
+    description: 'Zet een afspraak in Apple Agenda op de Mac (iCloud zet hem op de iPhone). Tijden in lokale tijd "YYYY-MM-DDTHH:mm". alert_minutes_before maakt een melding vooraf (60 = 1 uur, 1440 = 1 dag, 10080 = 1 week).',
+    inputSchema: { type: 'object', properties: { title: { type: 'string' }, start: { type: 'string' }, end: { type: 'string', description: 'optioneel, standaard 1 uur na start' }, alert_minutes_before: { type: 'number' }, location: { type: 'string' }, notes: { type: 'string' }, calendar: { type: 'string', description: 'naam van de agenda, optioneel' } }, required: ['title', 'start'] }
+  },
+  {
+    name: 'nebula_agenda',
+    description: 'Wat staat er gepland: afspraken uit Apple Agenda voor de komende dagen en open herinneringen.',
+    inputSchema: { type: 'object', properties: { days: { type: 'number', description: 'aantal dagen vooruit (standaard 7)' } } }
+  },
+  {
+    name: 'nebula_open_app',
+    description: 'Open een app op de Mac, bv. "Premiere Pro", "Spotify", "Obsidian". De naam mag ongeveer kloppen.',
+    inputSchema: { type: 'object', properties: { name: { type: 'string' } }, required: ['name'] }
   }
 ];
 
@@ -168,6 +205,13 @@ async function callTool(name, a = {}) {
   if (name === 'nebula_show') {
     return control({ path: a.path, view: a.view });
   }
+  if (name === 'nebula_memory') return 'Geheugen:\n' + (await memory.summary(vaultRoot()));
+  if (name === 'nebula_remember') return memory.remember(vaultRoot(), a.fact, a.until);
+  if (name === 'nebula_forget') return memory.forget(vaultRoot(), a.text);
+  if (name === 'nebula_reminder') return mac.addReminder(a);
+  if (name === 'nebula_event') return mac.addEvent({ ...a, alertMinutesBefore: a.alert_minutes_before ?? -1 });
+  if (name === 'nebula_agenda') return mac.agenda(Math.min(60, Math.max(1, a.days || 7)));
+  if (name === 'nebula_open_app') return 'Geopend: ' + (await mac.openApp(a.name));
   throw new Error('Onbekende tool: ' + name);
 }
 
@@ -179,7 +223,7 @@ async function handle(msg) {
   try {
     let result;
     if (method === 'initialize') {
-      result = { protocolVersion: params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'nebula', version: VERSION }, instructions: 'Nebula is de Obsidian-vault (het tweede brein) van de gebruiker. Gebruik nebula_overview om te beginnen en nebula_search/nebula_read om context uit zijn notes te halen. Bewaar aan het eind van elk betekenisvol gesprek automatisch een korte samenvatting met nebula_save_chat, zodat het gesprek in zijn universum komt.' };
+      result = { protocolVersion: params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'nebula', version: VERSION }, instructions: 'Nebula is de persoonlijke assistent en het tweede brein (Obsidian-vault) van de gebruiker. Lees aan het begin van een gesprek nebula_memory. Vertelt de gebruiker iets persoonlijks dat later nuttig is (plannen, reizen, mensen, voorkeuren, gezondheid, deadlines), sla het dan meteen op met nebula_remember, met concrete datums. Gebruik nebula_search/nebula_read voor context uit zijn notes, nebula_reminder/nebula_event voor herinneringen en afspraken (die komen via iCloud op zijn iPhone) en nebula_open_app om apps te openen. Bewaar aan het eind van een betekenisvol gesprek een korte samenvatting met nebula_save_chat.' };
     } else if (method === 'ping') result = {};
     else if (method === 'tools/list') result = { tools: TOOLS };
     else if (method === 'tools/call') {

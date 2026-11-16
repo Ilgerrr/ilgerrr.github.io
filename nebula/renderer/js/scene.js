@@ -5,20 +5,17 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildLayout } from './layout.js';
-import { BRAIN_VIEW } from './brain.js';
-import { smooth, easeInOut, clamp } from './util.js';
+import { easeInOut, clamp } from './util.js';
 
 const MAXG = 16;
 
-const MORPH_GLSL = /* glsl */ `
-uniform float uMorph;
+const SPIN_GLSL = /* glsl */ `
 uniform float uTime;
 uniform float uGrow;
 uniform float uFocus;
 uniform float uFocusAmt;
 uniform vec3 uCenters[${MAXG}];
 uniform vec3 uAxes[${MAXG}];
-attribute vec3 aBrain;
 attribute vec3 aColor;
 attribute float aBirth;
 attribute float aSeed;
@@ -34,13 +31,9 @@ float spinOf(float cl) {
   float dir = mod(cl, 2.0) < 0.5 ? 1.0 : -1.0;
   return uTime * 0.03 * dir * (0.7 + 0.3 * fract(cl * 0.618));
 }
-float morphOf(float seed) { float d = seed * 0.4; return smoothstep(d, d + 0.6, uMorph); }
-vec3 morphPos(vec3 gal, vec3 brain, float seed, float cl) {
+vec3 spinPos(vec3 p, float cl) {
   int ci = int(cl + 0.5);
-  vec3 g = rotAxis(gal, uCenters[ci], uAxes[ci], spinOf(cl));
-  float m = morphOf(seed);
-  vec3 sw = normalize(vec3(sin(seed * 91.7), cos(seed * 53.1), sin(seed * 17.3) + 0.001));
-  return mix(g, brain, m) + sw * 24.0 * sin(m * 3.14159265);
+  return rotAxis(p, uCenters[ci], uAxes[ci], spinOf(cl));
 }
 float focusOf(float cl) {
   if (uFocus < -0.5) return 1.0;
@@ -49,24 +42,17 @@ float focusOf(float cl) {
 `;
 
 const POINT_VERT = /* glsl */ `
-${MORPH_GLSL}
+${SPIN_GLSL}
 uniform float uScale;
 attribute float aSize;
 attribute float aKind;
 varying float vKind;
-varying float vM;
 void main() {
-  float m = morphOf(aSeed);
-  vM = m;
-  vec3 p = morphPos(position, aBrain, aSeed, aCluster);
-  p += m * 0.22 * vec3(sin(uTime * 1.3 + aSeed * 50.0), cos(uTime * 1.1 + aSeed * 40.0), sin(uTime * 0.9 + aSeed * 30.0));
-  vec4 mv = modelViewMatrix * vec4(p, 1.0);
+  vec4 mv = modelViewMatrix * vec4(spinPos(position, aCluster), 1.0);
   float born = smoothstep(aBirth, aBirth + 0.012, uGrow);
   float pop = 1.0 + born * (1.0 - born) * 7.0;
   float s = aSize;
-  if (aKind > 1.5) s *= (1.0 - m * 0.9);
-  else if (aKind > 0.5) s *= (0.86 + 0.14 * sin(uTime * 2.2 + aSeed * 60.0)) * (1.0 - m * 0.25);
-  else s *= 1.0 + m * 0.15;
+  if (aKind > 0.5 && aKind < 1.5) s *= 0.86 + 0.14 * sin(uTime * 2.2 + aSeed * 60.0);
   gl_PointSize = clamp(s * pop * born * uScale / -mv.z, 0.0, 512.0);
   vAlpha = born * focusOf(aCluster);
   vColor = aColor;
@@ -78,7 +64,6 @@ const POINT_FRAG = /* glsl */ `
 varying vec3 vColor;
 varying float vAlpha;
 varying float vKind;
-varying float vM;
 void main() {
   vec2 c = gl_PointCoord - 0.5;
   float d = length(c) * 2.0;
@@ -86,7 +71,7 @@ void main() {
   vec3 col = vColor;
   float a;
   if (vKind < 0.5) {
-    a = mix(pow(1.0 - d, 1.8) * 0.5, pow(1.0 - d, 2.6) * 0.62, vM);
+    a = pow(1.0 - d, 1.8) * 0.5;
   } else if (vKind < 1.5) {
     float core = exp(-d * d * 30.0);
     float halo = pow(1.0 - d, 2.6) * 0.6;
@@ -99,12 +84,11 @@ void main() {
 }`;
 
 const LINE_VERT = /* glsl */ `
-${MORPH_GLSL}
+${SPIN_GLSL}
 void main() {
-  vec3 p = morphPos(position, aBrain, aSeed, aCluster);
   vAlpha = smoothstep(aBirth, aBirth + 0.012, uGrow) * focusOf(aCluster);
   vColor = aColor;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(spinPos(position, aCluster), 1.0);
 }`;
 
 const LINE_FRAG = /* glsl */ `
@@ -147,7 +131,6 @@ export class Universe {
     this.controls.autoRotateSpeed = 0.18;
 
     this.uniforms = {
-      uMorph: { value: 0 },
       uTime: { value: 0 },
       uGrow: { value: 1.05 },
       uFocus: { value: -1 },
@@ -172,7 +155,6 @@ export class Universe {
     this.highlight.frustumCulled = false;
     this.scene.add(this.highlight);
 
-    this.morph = 0; this.morphTarget = 0;
     this.focus = -1; this.focusAmt = 0; this.focusTarget = 0;
     this.selected = -1;
     this.tween = null;
@@ -223,7 +205,6 @@ export class Universe {
     const P = L.points;
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(P.gal, 3));
-    g.setAttribute('aBrain', new THREE.BufferAttribute(P.brn, 3));
     g.setAttribute('aColor', new THREE.BufferAttribute(P.col, 3));
     g.setAttribute('aSize', new THREE.BufferAttribute(P.size, 1));
     g.setAttribute('aBirth', new THREE.BufferAttribute(P.birth, 1));
@@ -239,7 +220,6 @@ export class Universe {
     const Ln = L.lines;
     const lg = new THREE.BufferGeometry();
     lg.setAttribute('position', new THREE.BufferAttribute(Ln.gal, 3));
-    lg.setAttribute('aBrain', new THREE.BufferAttribute(Ln.brn, 3));
     lg.setAttribute('aColor', new THREE.BufferAttribute(Ln.col, 3));
     lg.setAttribute('aBirth', new THREE.BufferAttribute(Ln.birth, 1));
     lg.setAttribute('aSeed', new THREE.BufferAttribute(Ln.seed, 1));
@@ -269,7 +249,7 @@ export class Universe {
   }
   starPos(i, out = new THREE.Vector3()) {
     const P = this.layout.points;
-    const cl = P.cluster[i], sd = P.seed[i];
+    const cl = P.cluster[i];
     const gx = this.layout.galaxies[cl];
     out.set(P.gal[i * 3], P.gal[i * 3 + 1], P.gal[i * 3 + 2]);
     const a = this.spinOf(cl);
@@ -281,20 +261,10 @@ export class Universe {
       const dot = k.dot(v);
       out.copy(gx.center).addScaledVector(v, c).addScaledVector(cr, s).addScaledVector(k, dot * (1 - c));
     }
-    const m = smooth(sd * 0.4, sd * 0.4 + 0.6, this.morph);
-    if (m > 0) {
-      out.x += (P.brn[i * 3] - out.x) * m;
-      out.y += (P.brn[i * 3 + 1] - out.y) * m;
-      out.z += (P.brn[i * 3 + 2] - out.z) * m;
-      const sw = this._axis.set(Math.sin(sd * 91.7), Math.cos(sd * 53.1), Math.sin(sd * 17.3) + 0.001).normalize();
-      out.addScaledVector(sw, 24 * Math.sin(m * Math.PI));
-    }
     return out;
   }
   galaxyAnchor(k, out = new THREE.Vector3()) {
-    const gx = this.layout.galaxies[k];
-    const m = smooth(0.25, 0.85, this.morph);
-    return out.copy(gx.center).lerp(gx.brainAnchor, m);
+    return out.copy(this.layout.galaxies[k].center);
   }
   project(v, out = { x: 0, y: 0, visible: false }) {
     const p = this._v.copy(v).project(this.camera);
@@ -322,7 +292,6 @@ export class Universe {
   }
 
   // ---------- state ----------
-  setMorph(t) { this.morphTarget = t; }
   setFocus(k) {
     if (k >= 0) { this.focus = k; this.focusTarget = 1; this.uniforms.uFocus.value = k; }
     else this.focusTarget = 0;
@@ -352,17 +321,13 @@ export class Universe {
     const dir = new THREE.Vector3(0.12, 0.42, 1).normalize();
     this.flyTo(new THREE.Vector3(0, 0, 0), dir.multiplyScalar(dist), duration);
   }
-  frameBrain(duration = 2.2) {
-    this.flyTo(new THREE.Vector3(...BRAIN_VIEW.target), new THREE.Vector3(...BRAIN_VIEW.position), duration);
-  }
   flyToStar(i) {
     const p = this.starPos(i, new THREE.Vector3());
     const dir = this.camera.position.clone().sub(this.controls.target).normalize();
-    this.flyTo(p, p.clone().addScaledVector(dir, this.morph > 0.5 ? 120 : 70), 1.4);
+    this.flyTo(p, p.clone().addScaledVector(dir, 70), 1.4);
   }
   flyToGalaxy(k) {
     const p = this.galaxyAnchor(k, new THREE.Vector3());
-    if (this.morph > 0.5) { this.frameBrain(1.2); return; }
     const gx = this.layout.galaxies[k];
     const dir = this.camera.position.clone().sub(this.controls.target).normalize();
     this.flyTo(p, p.clone().addScaledVector(dir, gx.radius * 4.2 + 30), 1.5);
@@ -386,12 +351,6 @@ export class Universe {
     this.clock.update();
     const dt = Math.min(0.1, this.clock.getDelta());
     this.uniforms.uTime.value += dt;
-
-    // morph (per-particle stagger lives in the shader)
-    const md = this.morphTarget - this.morph;
-    if (Math.abs(md) > 1e-4) this.morph += Math.sign(md) * Math.min(Math.abs(md), dt / 2.6);
-    this.uniforms.uMorph.value = this.morph;
-    this.uniforms.uLineAlpha.value = 0.16 - 0.1 * smooth(0, 1, this.morph);
 
     const fd = this.focusTarget - this.focusAmt;
     this.focusAmt += fd * Math.min(1, dt * 4);

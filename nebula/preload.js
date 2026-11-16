@@ -23,6 +23,19 @@ contextBridge.exposeInMainWorld('nebula', {
     ipcRenderer.on('claude:synced', fn);
     return () => ipcRenderer.removeListener('claude:synced', fn);
   },
+  agentAsk: (id, text, sessionId) => ipcRenderer.invoke('agent:ask', { id, text, sessionId }),
+  agentCancel: id => ipcRenderer.invoke('agent:cancel', id),
+  agentAvailable: () => ipcRenderer.invoke('agent:available'),
+  onAgentEvent: cb => {
+    const fn = (_e, ev) => cb(ev);
+    ipcRenderer.on('agent:event', fn);
+    return () => ipcRenderer.removeListener('agent:event', fn);
+  },
+  onSummon: cb => {
+    const fn = () => cb();
+    ipcRenderer.on('agent:summon', fn);
+    return () => ipcRenderer.removeListener('agent:summon', fn);
+  },
   onControl: cb => {
     const fn = (_e, msg) => cb(msg);
     ipcRenderer.on('control', fn);

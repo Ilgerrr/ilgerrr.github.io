@@ -1,40 +1,37 @@
 # Nebula
 
-Je Obsidian-vault als levend universum — en als brein. Gebouwd voor macOS.
+Je persoonlijke Jarvis op de Mac: je Obsidian-vault als levend universum, en een assistent die echt dingen doet.
 
-- **Home**: begroeting, stats, gedachte vastleggen (gaat naar je daily note), recent, stelsels, activiteit.
-- **Universum**: elke map is een sterrenstelsel, elke note een ster, elke `[[link]]` een lichtspoor. Klik een ster voor de preview → *Open in Obsidian*.
-- **Brein**: alle deeltjes morphen naar een 3D-brein; elke map wordt een hersengebied.
-- **Tijdlijn**: ▶ laat je vault groeien in de volgorde waarin je notes zijn ontstaan.
-- **Opnemen**: neemt het universum op als video (komt in je Films-map). `H` = clean view.
-- **Live**: wijzig iets in Obsidian en Nebula past zich direct aan.
+**Privé.** Deze app wordt niet gepubliceerd. Je notes, chats en geheugen blijven op je Mac.
 
-## Installeren (één regel in Terminal)
+## Installeren / bijwerken
 
 ```bash
-A=$(uname -m); [ "$A" = x86_64 ] && A=x64; curl -fL -o /tmp/Nebula.zip "https://github.com/ilgerrr/ilgerrr.github.io/releases/download/nebula-latest/Nebula-$A-mac.zip" && rm -rf /Applications/Nebula.app && ditto -xk /tmp/Nebula.zip /Applications && xattr -cr /Applications/Nebula.app && open /Applications/Nebula.app
+cd ~/nebula-src && git pull && cd nebula && npm install && npm run install-app
 ```
 
-Dezelfde regel werkt ook om bij te werken. Of download de `.dmg` via de release *nebula-latest*.
+## Hey Nebula
 
-Zelf bouwen: `cd nebula && npm install && npm start` (of `npm run install-app`).
+`⌥ Spatie` (overal op je Mac; is die al bezet, dan `⌥⇧ Spatie`), `/` of `⌘J` in de app, of het veld op Home. Dicteren: 2× `fn`.
 
-## Claude
+Nebula draait op **Claude Code** (`claude -p`, je eigen abonnement, geen API-key) en mag alleen de Nebula-tools en websearch gebruiken:
 
-Nebula heeft een ingebouwde MCP-server, zodat Claude met je vault en de app kan praten:
+- **Herinneringen**: "herinner me over 5 min dat Karen haar pillen moet nemen" → Apple Herinneringen, via iCloud met melding op je iPhone.
+- **Agenda**: "volgende week maandag om 10u een meeting, herinner me een week ervoor" → Apple Agenda met melding vooraf. "Wat staat er morgen?" leest je agenda en open herinneringen.
+- **Apps**: "open Premiere Pro".
+- **Vault**: zoeken, lezen, schrijven, iets in je daily note zetten.
+- **Geheugen**: vertel je iets ("ik ga volgende week skiën"), dan wordt het een feit in `Nebula/Geheugen.md` (met einddatum). Elk gesprek leest dat terug. Je kunt het bestand zelf aanpassen.
 
-| tool | wat |
-|---|---|
-| `nebula_overview` | overzicht van je vault |
-| `nebula_search` / `nebula_read` | zoeken en lezen (incl. links) |
-| `nebula_write` | notes maken / aanvullen |
-| `nebula_capture` | gedachte in je daily note |
-| `nebula_save_chat` | gesprek bewaren in *Claude Chats* |
-| `nebula_show` | Nebula laten vliegen naar een note of naar het brein |
+De eerste keer vraagt macOS of Nebula Herinneringen en Agenda mag bedienen. Kies **Sta toe**.
 
-**Automatisch:**
-- **Claude Desktop** wordt bij de eerste start van Nebula verbonden (backup: `claude_desktop_config.json.backup`). Herstart Claude één keer.
-- **Claude Code-chats** (`~/.claude/projects`) komen vanzelf in `Claude Chats/Claude Code`, ook nieuwe.
-- **claude.ai-chats**: vraag een export aan (claude.ai → Instellingen → Privacy → Exporteer data). Zodra de zip in Downloads staat, zet Nebula alle chats in `Claude Chats/claude.ai`.
-- Elke chat wordt automatisch gelinkt aan de notes die erin genoemd worden.
-- Claude Code verbinden: Instellingen → *Kopieer commando* → plak in Terminal.
+## Claude overal
+
+De ingebouwde MCP-server (`mcp/server.js`) geeft Claude Desktop en Claude Code dezelfde tools: `nebula_overview`, `nebula_search`, `nebula_read`, `nebula_write`, `nebula_capture`, `nebula_save_chat`, `nebula_show`, `nebula_memory`, `nebula_remember`, `nebula_forget`, `nebula_reminder`, `nebula_event`, `nebula_agenda`, `nebula_open_app`.
+
+- **Claude Desktop** wordt bij de eerste start verbonden (backup: `claude_desktop_config.json.backup`).
+- **Claude Code-chats** (`~/.claude/projects`) komen automatisch in `Claude Chats/Claude Code`.
+- **claude.ai- en Desktop-chats**: daar bestaat geen API voor. Alleen de handmatige export (claude.ai → Instellingen → Privacy → Exporteer data) werkt: zodra de zip in Downloads staat, importeert Nebula hem. Chats die je daar later verwijdert of archiveert, blijven in je vault staan, want Nebula kan dat niet zien.
+
+## Universum
+
+Elke map is een sterrenstelsel, elke note een ster, elke `[[link]]` een lichtspoor. Klik een ster voor de preview → *Open in Obsidian*. Tijdlijn ▶ laat je vault groeien. Opnemen zet een video in je Films-map, `H` = clean view. Live: wat je in Obsidian verandert, verschijnt meteen.

@@ -1,6 +1,5 @@
-// Turns the model into GPU buffers: galaxy positions, brain positions, colours, sizes, births.
+// Turns the model into GPU buffers: galaxy positions, colours, sizes, births.
 import * as THREE from 'three';
-import { makeBrain } from './brain.js';
 import { rng, hash, gauss, clamp } from './util.js';
 
 const MAX_DUST = 110000;
@@ -73,18 +72,8 @@ export function buildLayout(model) {
   const dustTotal = dustPer.reduce((a, b) => a + b, 0);
   if (dustTotal > MAX_DUST) dustPer = dustPer.map(n => Math.floor((n * MAX_DUST) / dustTotal));
   const puffPer = G.map(g => 5 + Math.floor(Math.sqrt(g.count) * 1.4));
-  const extraPer = dustPer.map(n => Math.floor(n * 0.13));
-  const quotas = G.map((g, k) => g.count + puffPer[k] + dustPer[k] - extraPer[k]);
-  const extraTotal = extraPer.reduce((a, b) => a + b, 0);
-  const brain = makeBrain(G.map(g => Math.pow(g.count, 0.6) + 1.5), quotas, extraTotal, R);
-  const used = new Int32Array(K);
-  let extraUsed = 0;
-  const takeRegion = k => { const o = used[k]++ * 3; return brain.regions[k].subarray(o, o + 3); };
-  const takeExtra = () => { const o = extraUsed++ * 3; return brain.extras.subarray(o, o + 3); };
-
   const N = notes.length + puffPer.reduce((a, b) => a + b, 0) + dustPer.reduce((a, b) => a + b, 0);
   const gal = new Float32Array(N * 3);
-  const brn = new Float32Array(N * 3);
   const col = new Float32Array(N * 3);
   const size = new Float32Array(N);
   const birth = new Float32Array(N);
@@ -94,9 +83,8 @@ export function buildLayout(model) {
   const tmp = new THREE.Color();
   const white = new THREE.Color(1, 1, 1);
   let p = 0;
-  const put = (pos, b, c, s, bi, sd, kd, cl) => {
+  const put = (pos, c, s, bi, sd, kd, cl) => {
     gal[p * 3] = pos.x; gal[p * 3 + 1] = pos.y; gal[p * 3 + 2] = pos.z;
-    brn[p * 3] = b[0]; brn[p * 3 + 1] = b[1]; brn[p * 3 + 2] = b[2];
     col[p * 3] = c.r; col[p * 3 + 1] = c.g; col[p * 3 + 2] = c.b;
     size[p] = s; birth[p] = bi; seed[p] = sd; kind[p] = kd; cluster[p] = cl;
     p++;
@@ -122,7 +110,7 @@ export function buildLayout(model) {
     const ang = (arm * Math.PI * 2) / g.arms + t * g.twist + (c - 0.5) * 0.9;
     disc(g, t * g.radius, ang, (d - 0.5) * g.radius * 0.16 * (1 - t * 0.6));
     tmp.copy(colors[n.g]).lerp(white, 0.12);
-    put(pos, takeRegion(n.g), tmp, 1.25 + 0.75 * Math.sqrt(n.degree) + (isHub ? 1.4 : 0), n.birth, s, 1, n.g);
+    put(pos, tmp, 1.25 + 0.75 * Math.sqrt(n.degree) + (isHub ? 1.4 : 0), n.birth, s, 1, n.g);
   }
   // nebula puffs
   G.forEach((g, k) => {
@@ -132,7 +120,7 @@ export function buildLayout(model) {
         .addScaledVector(g.v, gauss(R) * g.radius * 0.32)
         .addScaledVector(g.axis, gauss(R) * g.radius * 0.08);
       tmp.copy(colors[k]).multiplyScalar(0.8 + R() * 0.4);
-      put(pos, takeRegion(k), tmp, g.radius * (0.7 + R() * 0.9), firstBirth[k], R(), 2, k);
+      put(pos, tmp, g.radius * (0.7 + R() * 0.9), firstBirth[k], R(), 2, k);
     }
   });
   // dust
@@ -153,14 +141,13 @@ export function buildLayout(model) {
       const bright = 0.35 + R() * 0.65;
       tmp.copy(colors[k]).lerp(white, R() * R() * 0.45).multiplyScalar(bright);
       const bi = notes[nIdx[Math.floor(R() * nIdx.length)]].birth + R() * 0.015;
-      const target = i < extraPer[k] ? takeExtra() : takeRegion(k);
-      put(pos, target, tmp, 0.32 + R() * 0.7, bi, R(), 0, k);
+      put(pos, tmp, 0.32 + R() * 0.7, bi, R(), 0, k);
     }
   });
 
   // links
   const L = model.links.length;
-  const lGal = new Float32Array(L * 6), lBrn = new Float32Array(L * 6), lCol = new Float32Array(L * 6);
+  const lGal = new Float32Array(L * 6), lCol = new Float32Array(L * 6);
   const lBirth = new Float32Array(L * 2), lSeed = new Float32Array(L * 2), lCl = new Float32Array(L * 2);
   model.links.forEach(([a, b], li) => {
     const bi = Math.max(birth[a], birth[b]);
@@ -168,7 +155,6 @@ export function buildLayout(model) {
       const v = li * 2 + e;
       for (let q = 0; q < 3; q++) {
         lGal[v * 3 + q] = gal[s * 3 + q];
-        lBrn[v * 3 + q] = brn[s * 3 + q];
         lCol[v * 3 + q] = col[s * 3 + q];
       }
       lBirth[v] = bi; lSeed[v] = seed[s]; lCl[v] = cluster[s];
@@ -179,11 +165,8 @@ export function buildLayout(model) {
     count: N,
     stars: notes.length,
     bound,
-    points: { gal, brn, col, size, birth, seed, kind, cluster },
-    lines: { gal: lGal, brn: lBrn, col: lCol, birth: lBirth, seed: lSeed, cluster: lCl },
-    galaxies: G.map((g, k) => ({
-      center: g.center, axis: g.axis, radius: g.radius,
-      brainAnchor: new THREE.Vector3(...brain.anchors[k])
-    }))
+    points: { gal, col, size, birth, seed, kind, cluster },
+    lines: { gal: lGal, col: lCol, birth: lBirth, seed: lSeed, cluster: lCl },
+    galaxies: G.map(g => ({ center: g.center, axis: g.axis, radius: g.radius }))
   };
 }

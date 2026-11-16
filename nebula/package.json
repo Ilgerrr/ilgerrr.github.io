@@ -7,9 +7,10 @@
   "private": true,
   "author": "Ilger",
   "scripts": {
-    "start": "electron .",
-    "build:mac": "electron-builder --mac --publish never",
-    "install-app": "electron-builder --mac dir --publish never && rm -rf /Applications/Nebula.app && cp -R dist/mac*/Nebula.app /Applications/ && open /Applications/Nebula.app"
+    "vendor": "node scripts/vendor-three.js",
+    "start": "npm run vendor && electron .",
+    "build:mac": "npm run vendor && electron-builder --mac --publish never",
+    "install-app": "npm run vendor && electron-builder --mac dir --publish never && rm -rf /Applications/Nebula.app && cp -R dist/mac*/Nebula.app /Applications/ && open /Applications/Nebula.app"
   },
   "dependencies": {
     "three": "0.187.0"
@@ -31,9 +32,6 @@
       "src/**",
       "mcp/**",
       "renderer/**",
-      "node_modules/three/build/three.module.js",
-      "node_modules/three/build/three.core.js",
-      "node_modules/three/examples/jsm/**",
       "package.json"
     ],
     "mac": {
@@ -61,7 +59,12 @@
       "extendInfo": {
         "NSDocumentsFolderUsageDescription": "Nebula leest je Obsidian-vault.",
         "NSDownloadsFolderUsageDescription": "Nebula importeert automatisch je Claude-export uit Downloads.",
-        "NSDesktopFolderUsageDescription": "Nebula leest je Obsidian-vault."
+        "NSDesktopFolderUsageDescription": "Nebula leest je Obsidian-vault.",
+        "NSAppleEventsUsageDescription": "Nebula zet herinneringen en afspraken in Herinneringen en Agenda.",
+        "NSRemindersUsageDescription": "Nebula zet herinneringen voor je klaar.",
+        "NSRemindersFullAccessUsageDescription": "Nebula zet herinneringen voor je klaar en leest wat er openstaat.",
+        "NSCalendarsUsageDescription": "Nebula zet afspraken in je agenda.",
+        "NSCalendarsFullAccessUsageDescription": "Nebula zet afspraken in je agenda en leest wat er gepland staat."
       }
     },
     "dmg": {

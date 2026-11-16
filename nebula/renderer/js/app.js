@@ -100,30 +100,23 @@ function setView(view, instant = false) {
   body.dataset.view = view;
   $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.go === view));
   moveIndicator();
-  $$('#morph-seg button').forEach(b => b.classList.toggle('on', (+b.dataset.morph === 1) === (view === 'brain')));
 
   if (view === 'home') {
     closePanel();
     uni.setFocus(-1);
-    uni.setMorph(0);
     uni.setFilmOffset(homeOffset());
     uni.controls.autoRotateSpeed = 0.22;
     uni.frameUniverse(1.08, instant ? 0.01 : 1.8);
     if (state.playing) togglePlay(false);
     setGrow(1.05);
-  } else if (view === 'universe') {
-    uni.setMorph(0);
+  } else {
+    state.view = view = 'universe';
+    body.dataset.view = view;
     uni.setFilmOffset(0);
     uni.controls.autoRotateSpeed = 0.16;
-    if (prev !== 'universe') uni.frameUniverse(1, prev === 'brain' ? 2.4 : 1.6);
-  } else if (view === 'brain') {
-    uni.setFocus(-1);
-    uni.setMorph(1);
-    uni.setFilmOffset(0);
-    uni.controls.autoRotateSpeed = 0.0;
-    uni.frameBrain(prev === 'home' ? 2.0 : 2.6);
+    if (prev !== 'universe') uni.frameUniverse(1, 1.6);
   }
-  uni.controls.autoRotate = view !== 'brain';
+  uni.controls.autoRotate = true;
 }
 
 function moveIndicator() {
@@ -136,7 +129,6 @@ function moveIndicator() {
 window.addEventListener('resize', () => { moveIndicator(); if (state.view === 'home') uni.setFilmOffset(homeOffset()); });
 
 $$('[data-go]').forEach(b => b.addEventListener('click', () => setView(b.dataset.go)));
-$$('#morph-seg button').forEach(b => b.addEventListener('click', () => setView(+b.dataset.morph ? 'brain' : 'universe')));
 $('[data-action="search"]').addEventListener('click', openSearch);
 
 // =============== home / dashboard ===============
@@ -156,7 +148,6 @@ function renderHome() {
   const s = m.stats;
   $('#stats').innerHTML = `<span><b>${s.notes}</b> notes</span><span><b>${s.links}</b> links</span><span><b>${s.galaxies}</b> stelsels</span><span><b>${s.newThisWeek}</b> nieuw deze week</span>`;
   $('#card-universe').textContent = `${s.galaxies} stelsels`;
-  $('#card-brain').textContent = `${s.galaxies} regio's`;
   $('#card-notes').textContent = `${s.notes} notes · ⌘K`;
   bridge.dailyName().then(n => { $('#card-daily').textContent = n ? n.split('/').pop().replace(/\.md$/, '') : 'Daily note'; }).catch(() => {});
 
@@ -221,6 +212,7 @@ $('#capture').addEventListener('submit', async e => {
   const input = $('#capture-input');
   const text = input.value.trim();
   if (!text) return;
+  if (await agentAvailable()) { input.value = ''; openNebula(text); return; }
   try {
     const r = await bridge.capture(text);
     input.value = '';
@@ -254,12 +246,11 @@ uni.onFrame = dt => {
   if (!state.model || !uni.layout) return;
   // labels
   upV.setFromMatrixColumn(uni.camera.matrixWorld, 1);
-  const morphE = clamp((uni.morph - 0.25) / 0.6, 0, 1);
   state.model.galaxies.forEach((g, k) => {
     const el = labelEls[k];
     if (!el) return;
     const gx = uni.layout.galaxies[k];
-    uni.galaxyAnchor(k, tmpV).addScaledVector(upV, gx.radius * 0.95 * (1 - morphE));
+    uni.galaxyAnchor(k, tmpV).addScaledVector(upV, gx.radius * 0.95);
     uni.project(tmpV, scr);
     const born = state.model.notes[g.notes[0]] && Math.min(...g.notes.slice(0, 50).map(i => state.model.notes[i].birth)) <= uni.uniforms.uGrow.value;
     el.style.display = scr.visible && born ? '' : 'none';
@@ -563,7 +554,6 @@ bridge.onControl?.(msg => {
   if (msg.path) {
     const ref = msg.path.replace(/\.md$/i, '').toLowerCase();
     const n = state.model.notes.find(x => x.path.replace(/\.md$/i, '').toLowerCase() === ref) || state.model.notes.find(x => x.title.toLowerCase() === ref.split('/').pop());
-    if (msg.view === 'brain') setView('brain');
     if (n) selectNote(n.i); else toast('Claude zocht “' + msg.path + '” maar die bestaat niet', true);
   } else if (msg.view) setView(msg.view);
 });
@@ -586,11 +576,122 @@ $('#settings').addEventListener('click', e => { if (e.target.id === 'settings') 
 $('#btn-settings').addEventListener('click', openSettings);
 $('#vault-chip').addEventListener('click', openSettings);
 
+// =============== Hey Nebula ===============
+const TOOL_LABEL = {
+  nebula_overview: ['vault', () => 'Bekijkt je vault'],
+  nebula_search: ['vault', a => `Zoekt “${a.query || ''}”`],
+  nebula_read: ['vault', a => `Leest ${String(a.path || '').split('/').pop()}`],
+  nebula_write: ['vault', a => `Schrijft ${String(a.path || '').split('/').pop()}`],
+  nebula_capture: ['vault', () => 'Noteert in je daily note'],
+  nebula_save_chat: ['vault', () => 'Bewaart dit gesprek'],
+  nebula_show: ['vault', () => 'Toont het in Nebula'],
+  nebula_memory: ['memory', () => 'Leest je geheugen'],
+  nebula_remember: ['memory', a => `Onthoudt: ${a.fact || ''}`],
+  nebula_forget: ['memory', a => `Vergeet: ${a.text || ''}`],
+  nebula_reminder: ['reminder', a => `Herinnering: ${a.title || ''}${a.when ? ' · ' + String(a.when).replace('T', ' ') : ''}`],
+  nebula_event: ['event', a => `Afspraak: ${a.title || ''} · ${String(a.start || '').replace('T', ' ')}`],
+  nebula_agenda: ['event', () => 'Bekijkt je agenda'],
+  nebula_open_app: ['app', a => `Opent ${a.name || ''}`],
+  WebSearch: ['app', a => `Zoekt op het web${a.query ? ': ' + a.query : ''}`],
+  WebFetch: ['app', () => 'Leest een webpagina']
+};
+const neb = { open: false, busy: null, sessionId: null, lastAt: 0, available: null };
+
+async function agentAvailable() {
+  if (!bridge.agentAsk) return false;
+  if (neb.available === null) neb.available = await bridge.agentAvailable().catch(() => false);
+  return neb.available;
+}
+
+function openNebula(prefill) {
+  if (!state.model) return;
+  neb.open = true;
+  $('#hey').classList.add('open');
+  const inp = $('#nb-input');
+  if (Date.now() - neb.lastAt > 30 * 60 * 1000) newConversation();
+  inp.focus();
+  setTimeout(() => inp.focus(), 40);
+  if (prefill) askNebula(prefill);
+}
+function closeNebula() { neb.open = false; $('#hey').classList.remove('open'); }
+function newConversation() {
+  if (neb.busy) bridge.agentCancel?.(neb.busy);
+  neb.busy = null; neb.sessionId = null;
+  body.classList.remove('thinking');
+  $('#nb-thread').innerHTML = '';
+}
+
+function addMsg(cls, html) {
+  const el = document.createElement('div');
+  el.className = 'msg ' + cls;
+  el.innerHTML = html;
+  const th = $('#nb-thread');
+  th.appendChild(el);
+  th.scrollTop = th.scrollHeight;
+  return el;
+}
+const fmtAnswer = t => escapeHtml(t).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+
+async function askNebula(text) {
+  text = text.trim();
+  if (!text || neb.busy) return;
+  $('#nb-input').value = '';
+  addMsg('you', escapeHtml(text));
+  const turn = addMsg('neb turn', '<div class="chips"></div><div class="typing"><b></b><b></b><b></b><span>Denkt na…</span></div>');
+  neb.lastAt = Date.now();
+
+  if (!(await agentAvailable())) {
+    turn.querySelector('.typing').remove();
+    if (!isNative) turn.insertAdjacentHTML('beforeend', 'Demo — in de Mac-app voert Claude dit echt uit: herinneringen, agenda, apps en je vault.');
+    else turn.insertAdjacentHTML('beforeend', 'Ik vind Claude Code niet op deze Mac. Installeer het en log één keer in met <code>claude</code> in Terminal.');
+    turn.classList.add('err');
+    return;
+  }
+  const id = 'q' + Date.now();
+  neb.busy = id;
+  body.classList.add('thinking');
+  const r = await bridge.agentAsk(id, text, neb.sessionId);
+  if (r && r.error === 'novault') { onAgentEvent({ id, type: 'done', error: 'novault', text: 'Kies eerst je vault in Instellingen.' }); }
+}
+
+function onAgentEvent(ev) {
+  if (ev.id !== neb.busy) return;
+  const turn = [...$$('#nb-thread .turn')].pop();
+  if (!turn) return;
+  const typing = turn.querySelector('.typing');
+  if (ev.type === 'tool' && ev.name === 'ToolSearch') return;
+  if (ev.type === 'tool') {
+    const [kind, label] = TOOL_LABEL[ev.name] || ['app', () => ev.name];
+    turn.querySelector('.chips').insertAdjacentHTML('beforeend', `<span class="chip2 k-${kind}"><i></i><span>${escapeHtml(label(ev.input || {}))}</span></span>`);
+    if (typing) typing.querySelector('span').textContent = 'Bezig…';
+  } else if (ev.type === 'done') {
+    if (typing) typing.remove();
+    turn.insertAdjacentHTML('beforeend', `<div>${fmtAnswer(ev.text || '')}</div>`);
+    if (ev.error) turn.classList.add('err');
+    if (ev.sessionId) neb.sessionId = ev.sessionId;
+    neb.busy = null;
+    neb.lastAt = Date.now();
+    body.classList.remove('thinking');
+    if (!neb.open) toast(String(ev.text || '').slice(0, 120));
+  }
+  const th = $('#nb-thread');
+  th.scrollTop = th.scrollHeight;
+}
+bridge.onAgentEvent?.(onAgentEvent);
+bridge.onSummon?.(() => openNebula());
+
+$('#nb-form').addEventListener('submit', e => { e.preventDefault(); askNebula($('#nb-input').value); });
+$('#nb-new').addEventListener('click', () => { newConversation(); $('#nb-input').focus(); });
+$('#hey').addEventListener('click', e => { if (e.target.id === 'hey') closeNebula(); });
+
 // =============== keyboard ===============
 window.addEventListener('keydown', e => {
   const typing = /INPUT|TEXTAREA/.test(document.activeElement?.tagName);
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); return; }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') { e.preventDefault(); openNebula(); return; }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n' && neb.open) { e.preventDefault(); newConversation(); return; }
   if (e.key === 'Escape') {
+    if (neb.open) return closeNebula();
     if ($('#search').classList.contains('open')) return closeSearch();
     if ($('#settings').classList.contains('open')) return closeSettings();
     if (body.classList.contains('clean')) return toggleClean(false);
@@ -600,12 +701,11 @@ window.addEventListener('keydown', e => {
     return;
   }
   if (typing || body.classList.contains('onboarding') || e.metaKey || e.ctrlKey) return;
+  if (e.key === '/') { e.preventDefault(); openNebula(); return; }
   if (e.key === '1') setView('home');
   else if (e.key === '2') setView('universe');
-  else if (e.key === '3') setView('brain');
   else if (e.key === ' ' && state.view !== 'home') { e.preventDefault(); togglePlay(); }
   else if (e.key.toLowerCase() === 'h' && state.view !== 'home') toggleClean();
-  else if (e.key.toLowerCase() === 'm' && state.view !== 'home') setView(state.view === 'brain' ? 'universe' : 'brain');
 });
 
 // =============== toast ===============

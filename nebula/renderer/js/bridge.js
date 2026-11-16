@@ -1,7 +1,7 @@
 // Talks to the Electron main process. Outside Electron (browser preview) it falls back to a demo vault.
 import { rng, hash } from './util.js';
 
-const native = typeof window !== 'undefined' && window.nebula;
+const native = typeof window !== 'undefined' && window.nebula && typeof window.nebula.state === 'function' ? window.nebula : null;
 
 export const isNative = !!native;
 

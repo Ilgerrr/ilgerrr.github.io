@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -6,6 +6,7 @@ const http = require('http');
 const crypto = require('crypto');
 const vault = require('./src/vault');
 const claude = require('./src/claude-import');
+const agent = require('./src/agent');
 
 app.setName('Nebula');
 
@@ -286,14 +287,42 @@ function startClaudeWatchers() {
 
 ipcMain.handle('claude:sync-now', () => syncClaudeCode(false));
 
+// ---------- Hey Nebula ----------
+ipcMain.handle('agent:ask', (e, { id, text, sessionId }) => {
+  if (!config.vaultPath) return { error: 'novault' };
+  agent.ask({
+    id, text: String(text || '').slice(0, 8000), sessionId,
+    name: config.name, vaultPath: config.vaultPath,
+    mcpEntry: mcpEntry(), cwd: path.join(app.getPath('userData'), 'agent')
+  }, ev => { if (!e.sender.isDestroyed()) e.sender.send('agent:event', { id, ...ev }); });
+  return { ok: true };
+});
+ipcMain.handle('agent:cancel', (_e, id) => agent.cancel(id));
+ipcMain.handle('agent:available', async () => !!(await agent.findClaude()));
+
+function summonNebula() {
+  if (!win) createWindow();
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+  app.focus({ steal: true });
+  win.webContents.send('agent:summon');
+}
+
 app.whenReady().then(() => {
   loadConfig();
   startControlServer();
   createWindow();
   autoConnectClaudeDesktop();
+  // ⌥Space; if another app (e.g. Claude Desktop's quick entry) already owns it, fall back to ⌥⇧Space
+  for (const key of ['Alt+Space', 'Alt+Shift+Space']) {
+    try { if (globalShortcut.register(key, summonNebula)) { config.shortcut = key; break; } } catch {}
+  }
   setTimeout(() => { syncClaudeCode(true); startClaudeWatchers(); }, 2500);
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
+
+app.on('will-quit', () => globalShortcut.unregisterAll());
 
 app.on('window-all-closed', () => {
   stopWatch();
