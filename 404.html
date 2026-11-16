@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>404 ilger.</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { min-height: 100svh; display: grid; place-items: center; text-align: center; padding: 24px; }
+    main { display: grid; justify-items: center; gap: 28px; }
+    svg { width: 140px; height: auto; }
+    .display { font-size: clamp(48px, 9vw, 140px); }
+  </style>
+</head>
+<body>
+  <main>
+    <svg viewBox="0 0 372.79 249.04" aria-hidden="true"><path fill="#EFEBE4" d="M186.4 42.55C143.72 9.22 82.61 14.23 45.92 54.05C9.22 93.87 9.22 155.18 45.92 195C82.61 234.82 143.72 239.82 186.4 206.5C161.15 186.79 146.4 156.55 146.4 124.52C146.4 92.49 161.15 62.25 186.4 42.55Z"/><path fill="#F13936" d="M186.4 42.55C229.08 9.22 290.18 14.23 326.88 54.05C363.57 93.87 363.57 155.18 326.88 195C290.18 234.82 229.08 239.82 186.4 206.5C211.64 186.79 226.4 156.55 226.4 124.52C226.4 92.49 211.64 62.25 186.4 42.55Z"/></svg>
+    <p style="color:#a39d93">404</p>
+    <h1 class="display" id="t">This shot didn't<br>make the cut.</h1>
+    <a class="btn btn--paper" href="/" id="b">Back to the edit</a>
+  </main>
+  <script>
+    if ((document.documentElement.lang = (localStorage.getItem('ilger-lang') || ((navigator.language || '').toLowerCase().indexOf('nl') === 0 ? 'nl' : 'en'))) === 'nl') {
+      document.getElementById('t').innerHTML = 'Deze shot haalde<br>de montage niet.';
+      document.getElementById('b').textContent = 'Terug naar de edit';
+    }
+  </script>
+</body>
+</html>
