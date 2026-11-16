@@ -34,7 +34,7 @@
       var tz = '';
       try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
       var lowlands = tz === 'Europe/Brussels' || tz === 'Europe/Amsterdam';
-      document.documentElement.lang = forced ? forced[1] : (first.indexOf('nl') === 0 || (lowlands && !/^(fr|de)/.test(first)) ? 'nl' : 'en');
+      document.documentElement.lang = forced ? forced[1] : 'en'; // cases open in English, switch below the title
       document.documentElement.classList.add('js');
       var c = document.createElement('link');
       c.rel = 'canonical';
@@ -71,6 +71,7 @@
       <div class="allwork__head">
         <h1 class="display display--xl allwork__title" id="cases-title" data-i18n="cases.title" data-reveal>Three|cases.</h1>
         <p class="cases__lede" data-i18n="cases.lede"></p>
+        <div class="langswitch" role="group" aria-label="Language"><a href="cases.html?lang=en" data-l="en">English</a><a href="cases.html?lang=nl" data-l="nl">Nederlands</a></div>
       </div>
       <div class="projs cases__list">
       <article class="proj case" id="case-1">

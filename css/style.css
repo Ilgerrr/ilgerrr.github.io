@@ -864,3 +864,6 @@ body { background: transparent; }
 .case__block h3 { margin: 0 0 4px; font-weight: 800; font-stretch: 118%; font-size: clamp(14px, 1vw, 16px); }
 .case__block p { margin: 0; color: rgba(239, 235, 228, .78); font-size: clamp(14px, 1vw, 16px); line-height: 1.5; }
 .case__media--wide .feat__media { aspect-ratio: 16 / 9; }
+.langswitch { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; border: 1px solid rgba(239, 235, 228, .22); justify-self: start; }
+.langswitch a { padding: 8px 16px; border-radius: 999px; font-weight: 600; font-stretch: 112%; font-size: 14px; color: var(--paper); }
+html[lang="en"] .langswitch a[data-l="en"], html[lang="nl"] .langswitch a[data-l="nl"] { background: var(--paper); color: var(--ink); }
