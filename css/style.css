@@ -856,18 +856,11 @@ body { background: transparent; }
 .ca { text-shadow: calc(var(--ca, 0px) * -1) 0 0 rgba(241, 57, 54, .8), var(--ca, 0px) 0 0 rgba(70, 200, 255, .62) !important; }
 
 /* ===== Cases ===== */
-.cases__lede { max-width: 34ch; margin: 0; color: var(--paper); font-size: clamp(17px, 1.4vw, 22px); line-height: 1.4; }
-.cases__list { display: grid; gap: 20vh; }
-.case { display: grid; gap: clamp(24px, 3vw, 48px); }
-.case__head { display: grid; gap: 14px; max-width: 1100px; }
-.case__num { color: var(--red); font-weight: 700; font-size: 15px; }
-.case__title { font-size: clamp(36px, 5vw, 88px); }
-.case__kind { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--dim); }
-.case__one { margin: 0; max-width: 46ch; font-size: clamp(18px, 1.5vw, 24px); line-height: 1.4; color: var(--paper); }
-.case__media .feat__trio { max-width: 980px; }
+.cases .allwork__head { display: grid; justify-content: start; gap: 22px; }
+.cases__lede { max-width: 40ch; margin: 0; color: var(--paper); opacity: .85; font-size: clamp(17px, 1.4vw, 22px); line-height: 1.4; }
+.case .proj__title { text-transform: none; font-size: clamp(26px, 2.4vw, 44px); line-height: 1; }
+.case__one { margin: 0; font-size: clamp(16px, 1.2vw, 19px); line-height: 1.45; color: var(--paper); }
+.case__blocks { display: grid; gap: 18px; margin-top: 6px; padding-top: 20px; border-top: 1px solid rgba(239, 235, 228, .14); }
+.case__block h3 { margin: 0 0 4px; font-weight: 800; font-stretch: 118%; font-size: clamp(14px, 1vw, 16px); }
+.case__block p { margin: 0; color: rgba(239, 235, 228, .78); font-size: clamp(14px, 1vw, 16px); line-height: 1.5; }
 .case__media--wide .feat__media { aspect-ratio: 16 / 9; }
-.case__blocks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px clamp(20px, 2.4vw, 44px); border-top: 1px solid rgba(239, 235, 228, .14); padding-top: 28px; }
-.case__block h3 { margin: 0 0 8px; font-weight: 800; font-stretch: 118%; font-size: clamp(15px, 1.1vw, 18px); }
-.case__block p { margin: 0; color: rgba(239, 235, 228, .82); font-size: clamp(15px, 1.05vw, 17px); line-height: 1.5; }
-@media (max-width: 1000px) { .case__blocks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 600px) { .case__blocks { grid-template-columns: 1fr; } .cases__list { gap: 12vh; } }
